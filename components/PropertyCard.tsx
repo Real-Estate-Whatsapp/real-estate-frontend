@@ -245,7 +245,7 @@ export default function PropertyCard({ item }: any) {
         </div>
       )}
 
-      {/* BROKER INFO */}
+   
       {hasData(item.sourceMeta) && (
         <div className="border-t pt-3 mt-4">
           <h3 className="text-sm font-semibold text-gray-900 mb-2">👤 Source Information</h3>
