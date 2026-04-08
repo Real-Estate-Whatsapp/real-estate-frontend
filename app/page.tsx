@@ -7,65 +7,87 @@ import PropertyCard from "../components/PropertyCard";
 import Filters from "../components/Filters";
 import Loader from "../components/Loader";
 
+type FilterState = {
+  type: string;
+  segment: string;
+  locality: string;
+  bedrooms: string;
+  minPrice: string;
+  maxPrice: string;
+};
+
 export default function Home() {
   const [data, setData] = useState<any[]>([]);
-  const [filtered, setFiltered] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [searchQuery, setSearchQuery] = useState("");
 
-  const [filters, setFilters] = useState({
+  const [filters, setFilters] = useState<FilterState>({
     type: "",
     segment: "",
-    price: "",
+    locality: "",
+    bedrooms: "",
+    minPrice: "",
+    maxPrice: "",
   });
 
-  // 🔥 API CALL (with search + pagination)
   useEffect(() => {
     setLoading(true);
 
-    let url = `/api/inventory?page=${page}&limit=10`;
+    const queryParams = new URLSearchParams({
+      page: String(page),
+      limit: "10",
+    });
 
-    if (searchQuery) {
-      url += `&search=${searchQuery}`;
+    if (searchQuery.trim()) queryParams.set("search", searchQuery.trim());
+    if (filters.locality.trim()) queryParams.set("locality", filters.locality.trim());
+    if (filters.type) queryParams.set("type", filters.type);
+    if (filters.segment) queryParams.set("segment", filters.segment);
+    if (filters.minPrice) queryParams.set("minPrice", filters.minPrice);
+    if (filters.maxPrice) queryParams.set("maxPrice", filters.maxPrice);
+
+    if (filters.bedrooms === "5+") {
+      queryParams.set("minBedrooms", "5");
+    } else if (filters.bedrooms) {
+      queryParams.set("minBedrooms", filters.bedrooms);
+      queryParams.set("maxBedrooms", filters.bedrooms);
     }
 
-    if (filters.type) {
-      url += `&type=${filters.type}`;
-    }
-
-    if (filters.segment) {
-      url += `&segment=${filters.segment}`;
-    }
-
-    if (filters.price) {
-      url += `&maxPrice=${filters.price}`;
-    }
-
-    api.get(url)
+    api.get(`/api/inventory?${queryParams.toString()}`)
       .then((res) => {
-        setData(res.data.data);
-        setFiltered(res.data.data);
-        setTotalPages(res.data.totalPages);
+        setData(res.data?.data ?? []);
+        setTotalPages(res.data?.totalPages ?? 1);
         setLoading(false);
       })
-      .catch((err) => console.error(err));
+      .catch((err) => {
+        console.error(err);
+        setData([]);
+        setTotalPages(1);
+        setLoading(false);
+      });
   }, [page, searchQuery, filters]);
 
-  // 🔥 SEARCH
   const handleSearch = (query: string) => {
     setSearchQuery(query);
-    setPage(1); // 🔥 reset page
+    setPage(1);
   };
 
-  // 🔥 FILTER
-  const setFilter = (key: string, value: string) => {
-    setFilters((prev) => ({
-      ...prev,
-      [key]: value,
-    }));
+  const applyFilters = (next: FilterState) => {
+    setFilters(next);
+    setPage(1);
+  };
+
+  const clearFilters = () => {
+    setFilters({
+      type: "",
+      segment: "",
+      locality: "",
+      bedrooms: "",
+      minPrice: "",
+      maxPrice: "",
+    });
     setPage(1);
   };
 
@@ -88,7 +110,11 @@ export default function Home() {
         {/* Search + Filters */}
         <div className="bg-white p-4 rounded-xl shadow-md mb-6">
           <SearchBar onSearch={handleSearch} data={data} />
-          <Filters setFilter={setFilter} />
+          <Filters
+            filters={filters}
+            applyFilters={applyFilters}
+            clearFilters={clearFilters}
+          />
         </div>
 
         {/* Content */}
