@@ -16,6 +16,27 @@ type FilterState = {
   maxPrice: string;
 };
 
+const isAreaSearchValue = (value: string) => {
+  const normalizedValue = value.trim().toLowerCase();
+
+  if (!normalizedValue) {
+    return false;
+  }
+
+  return (
+    /\d/.test(normalizedValue) ||
+    normalizedValue.includes("super built") ||
+    normalizedValue.includes("superbuilt") ||
+    normalizedValue.includes("carpet") ||
+    normalizedValue.includes("plot area") ||
+    normalizedValue === "plot" ||
+    normalizedValue.includes("sqft") ||
+    normalizedValue.includes("sq ft") ||
+    normalizedValue.includes("sqyd") ||
+    normalizedValue.includes("sq yd")
+  );
+};
+
 export default function Home() {
   const [data, setData] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -36,13 +57,25 @@ export default function Home() {
   useEffect(() => {
     setLoading(true);
 
+    const trimmedSearchQuery = searchQuery.trim();
+    const trimmedAreaQuery = filters.locality.trim();
+
     const queryParams = new URLSearchParams({
       page: String(page),
       limit: "10",
     });
 
-    if (searchQuery.trim()) queryParams.set("search", searchQuery.trim());
-    if (filters.locality.trim()) queryParams.set("locality", filters.locality.trim());
+    if (trimmedSearchQuery) {
+      queryParams.set("locality", trimmedSearchQuery);
+    }
+
+    if (trimmedAreaQuery) {
+      if (isAreaSearchValue(trimmedAreaQuery)) {
+        queryParams.set("search", trimmedAreaQuery);
+      } else {
+        queryParams.set("locality", trimmedAreaQuery);
+      }
+    }
     if (filters.type) queryParams.set("type", filters.type);
     if (filters.segment) queryParams.set("segment", filters.segment);
     if (filters.minPrice) queryParams.set("minPrice", filters.minPrice);

@@ -64,7 +64,7 @@ export default function Filters({ filters, applyFilters, clearFilters }: Filters
       <input
         value={draft.locality}
         onChange={(e) => setField("locality", e.target.value)}
-        placeholder="Locality"
+        placeholder="Area"
         className="border p-2 rounded-lg"
       />
 
