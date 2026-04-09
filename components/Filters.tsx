@@ -60,18 +60,18 @@ export default function Filters({ filters, applyFilters, clearFilters }: Filters
   };
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 mb-4">
+    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
       <input
         value={draft.locality}
         onChange={(e) => setField("locality", e.target.value)}
         placeholder="Area"
-        className="border p-2 rounded-lg"
+        className="rounded-2xl border border-stone-300/80 bg-white px-4 py-3 text-sm text-slate-900 shadow-[0_8px_24px_rgba(15,23,42,0.04)] outline-none transition placeholder:text-stone-400 focus:border-[#14202d] focus:ring-4 focus:ring-slate-900/10"
       />
 
       <select
         value={draft.bedrooms}
         onChange={(e) => setField("bedrooms", e.target.value)}
-        className="border p-2 rounded-lg"
+        className="rounded-2xl border border-stone-300/80 bg-white px-4 py-3 text-sm text-slate-900 shadow-[0_8px_24px_rgba(15,23,42,0.04)] outline-none transition focus:border-[#14202d] focus:ring-4 focus:ring-slate-900/10"
       >
         <option value="">Any BHK</option>
         <option value="1">1 BHK</option>
@@ -84,7 +84,7 @@ export default function Filters({ filters, applyFilters, clearFilters }: Filters
       <select
         value={draft.type}
         onChange={(e) => setField("type", e.target.value)}
-        className="border p-2 rounded-lg"
+        className="rounded-2xl border border-stone-300/80 bg-white px-4 py-3 text-sm text-slate-900 shadow-[0_8px_24px_rgba(15,23,42,0.04)] outline-none transition focus:border-[#14202d] focus:ring-4 focus:ring-slate-900/10"
       >
         <option value="">All Type</option>
         <option value="apartment">Apartment</option>
@@ -97,7 +97,7 @@ export default function Filters({ filters, applyFilters, clearFilters }: Filters
       <select
         value={draft.segment}
         onChange={(e) => setField("segment", e.target.value)}
-        className="border p-2 rounded-lg"
+        className="rounded-2xl border border-stone-300/80 bg-white px-4 py-3 text-sm text-slate-900 shadow-[0_8px_24px_rgba(15,23,42,0.04)] outline-none transition focus:border-[#14202d] focus:ring-4 focus:ring-slate-900/10"
       >
         <option value="">All Segment</option>
         <option value="residential">Residential</option>
@@ -107,7 +107,7 @@ export default function Filters({ filters, applyFilters, clearFilters }: Filters
       <select
         value={draft.minPrice}
         onChange={(e) => setField("minPrice", e.target.value)}
-        className="border p-2 rounded-lg"
+        className="rounded-2xl border border-stone-300/80 bg-white px-4 py-3 text-sm text-slate-900 shadow-[0_8px_24px_rgba(15,23,42,0.04)] outline-none transition focus:border-[#14202d] focus:ring-4 focus:ring-slate-900/10"
       >
         {priceOptions.map((option) => (
           <option key={`min-${option.label}`} value={option.value}>
@@ -119,7 +119,7 @@ export default function Filters({ filters, applyFilters, clearFilters }: Filters
       <select
         value={draft.maxPrice}
         onChange={(e) => setField("maxPrice", e.target.value)}
-        className="border p-2 rounded-lg"
+        className="rounded-2xl border border-stone-300/80 bg-white px-4 py-3 text-sm text-slate-900 shadow-[0_8px_24px_rgba(15,23,42,0.04)] outline-none transition focus:border-[#14202d] focus:ring-4 focus:ring-slate-900/10"
       >
         {priceOptions.map((option) => (
           <option key={`max-${option.label}`} value={option.value}>
@@ -130,14 +130,14 @@ export default function Filters({ filters, applyFilters, clearFilters }: Filters
 
       <button
         onClick={handleApply}
-        className="rounded-lg bg-black px-4 py-2 text-sm text-white hover:bg-gray-900"
+        className="rounded-2xl bg-[#14202d] px-5 py-3 text-sm font-semibold text-white shadow-[0_14px_30px_rgba(20,32,45,0.22)] transition hover:-translate-y-0.5 hover:bg-[#1b3045]"
       >
         Apply
       </button>
 
       <button
         onClick={handleClear}
-        className="border border-gray-300 rounded-lg px-4 py-2 text-sm hover:bg-gray-100 transition"
+        className="rounded-2xl border border-stone-300 bg-stone-50 px-5 py-3 text-sm font-semibold text-slate-700 transition hover:bg-stone-100"
       >
         Clear
       </button>

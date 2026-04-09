@@ -45,36 +45,36 @@ export default function SearchBar({ onSearch, data }: any) {
   }, []);
 
   return (
-    <div ref={wrapperRef} className="relative mb-4">
+    <div ref={wrapperRef} className="relative mb-5">
 
       {/* 🔍 Input */}
       <div className="relative">
         <input
-          className="w-full p-3 pl-10 border rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-black"
-          placeholder="🔍 Search locality..."
+          className="w-full rounded-2xl border border-stone-300/80 bg-white px-5 py-4 pl-13 text-[15px] text-slate-900 shadow-[0_8px_24px_rgba(15,23,42,0.05)] outline-none transition placeholder:text-stone-400 focus:border-[#14202d] focus:ring-4 focus:ring-slate-900/10"
+          placeholder="Search locality"
           value={query}
           onChange={(e) => handleChange(e.target.value)}
           onFocus={() => setShow(true)}
         />
 
         {/* Icon */}
-        <span className="absolute left-3 top-3 text-gray-400">🔍</span>
+        <span className="absolute left-5 top-1/2 -translate-y-1/2 text-base text-stone-400">⌕</span>
       </div>
 
       {/* 💡 Suggestions */}
       {show && suggestions.length > 0 && (
-        <div className="absolute z-10 bg-white border w-full mt-2 rounded-xl shadow-lg max-h-60 overflow-y-auto">
+        <div className="absolute z-10 mt-3 max-h-72 w-full overflow-y-auto rounded-2xl border border-stone-200 bg-white/95 p-2 shadow-[0_20px_40px_rgba(15,23,42,0.12)] backdrop-blur">
           {suggestions.map((s, i) => (
             <div
               key={i}
-              className="px-4 py-2 hover:bg-gray-100 cursor-pointer flex items-center gap-2"
+              className="flex cursor-pointer items-center gap-3 rounded-xl px-4 py-3 text-sm text-slate-700 transition hover:bg-stone-100"
               onClick={() => {
                 setQuery(s);
                 onSearch(s);
                 setShow(false);
               }}
             >
-              <span className="text-gray-400">📍</span>
+              <span className="text-stone-400">⌕</span>
               <span>{s}</span>
             </div>
           ))}

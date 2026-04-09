@@ -34,30 +34,30 @@ export default function PropertyCard({ item }: any) {
   }
 
   return (
-    <div className="w-full max-w-lg mx-auto">
+    <div className="h-full w-full max-w-lg mx-auto">
       {/* Main Card Container */}
-      <div className="bg-white rounded-3xl shadow-lg hover:shadow-2xl transition-all duration-500 overflow-hidden border border-gray-100">
+      <div className="flex h-full flex-col overflow-hidden rounded-[30px] border border-white/80 bg-[linear-gradient(180deg,_rgba(255,255,255,0.98)_0%,_rgba(255,251,245,0.96)_100%)] shadow-[0_22px_55px_rgba(15,23,42,0.09)] transition-all duration-500 hover:-translate-y-1 hover:shadow-[0_28px_70px_rgba(15,23,42,0.13)]">
         
         {/* Header Section */}
-        <div className="bg-gradient-to-br from-blue-50 to-indigo-50 px-6 py-5 border-b border-gray-100">
-          <div className="flex items-start justify-between gap-3 mb-3">
+        <div className="border-b border-stone-200/80 bg-[linear-gradient(135deg,_rgba(248,250,252,0.98)_0%,_rgba(237,233,254,0.78)_55%,_rgba(219,234,254,0.92)_100%)] px-6 py-6">
+          <div className="mb-3 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
             <div className="flex-1">
-              <h2 className="text-2xl font-bold text-gray-900">
+              <h2 className="max-w-[14ch] text-3xl font-semibold leading-tight tracking-tight text-slate-900">
                 {item.address?.locality || 'Property'}
               </h2>
-              <p className="text-sm text-gray-600 mt-1">
+              <p className="mt-2 text-sm text-slate-500">
                 {item.address?.society && `${item.address.society} • `}
                 {item.address?.city || 'Location'}
               </p>
             </div>
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2 sm:justify-end">
               {item.listingType && (
-                <span className="px-3 py-1 bg-blue-600 text-white text-xs font-semibold rounded-full">
+                <span className="rounded-full bg-[#2157f2] px-3 py-1 text-[11px] font-bold tracking-[0.08em] text-white shadow-sm">
                   {item.listingType.toUpperCase()}
                 </span>
               )}
               {item.segment && (
-                <span className="px-3 py-1 bg-indigo-600 text-white text-xs font-semibold rounded-full">
+                <span className="rounded-full bg-[#5a3df0] px-3 py-1 text-[11px] font-bold tracking-[0.08em] text-white shadow-sm">
                   {item.segment.toUpperCase()}
                 </span>
               )}
@@ -65,14 +65,14 @@ export default function PropertyCard({ item }: any) {
           </div>
           
           {/* Property Type & Transaction Type */}
-          <div className="flex items-center gap-3 text-sm">
+          <div className="flex flex-wrap items-center gap-3 text-sm">
             {item.type && (
-              <div className="px-3 py-1 bg-white rounded-lg text-gray-700 font-medium">
+              <div className="rounded-full border border-white/80 bg-white/90 px-3 py-1.5 text-sm font-medium text-slate-700 shadow-[0_8px_20px_rgba(15,23,42,0.05)]">
                 {item.type}
               </div>
             )}
             {item.transactionType && (
-              <div className="px-3 py-1 bg-white rounded-lg text-gray-700 font-medium">
+              <div className="rounded-full border border-white/80 bg-white/90 px-3 py-1.5 text-sm font-medium text-slate-700 shadow-[0_8px_20px_rgba(15,23,42,0.05)]">
                 {item.transactionType === 'sell' && '🏷️ Sell'}
                 {item.transactionType === 'rent' && '🔑 Rent'}
                 {item.transactionType === 'buy' && '💳 Buy'}
@@ -84,13 +84,13 @@ export default function PropertyCard({ item }: any) {
 
         {/* Price Section - Prominent */}
         {item.financial?.price && (
-          <div className="px-6 py-5 bg-gradient-to-r from-green-50 to-emerald-50 border-b border-green-100">
-            <p className="text-xs text-gray-600 mb-1">Total Price</p>
-            <p className="text-4xl font-black text-green-600">
+          <div className="border-b border-emerald-100 bg-[linear-gradient(135deg,_rgba(236,253,245,0.96)_0%,_rgba(209,250,229,0.88)_100%)] px-6 py-5">
+            <p className="mb-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-emerald-900/60">Total Price</p>
+            <p className="text-4xl font-semibold tracking-tight text-emerald-700">
               {formatCurrency(item.financial.price)}
             </p>
             {item.financial?.pricePerSqft && (
-              <p className="text-xs text-gray-600 mt-2">
+              <p className="mt-2 text-xs text-emerald-900/65">
                 ₹{item.financial.pricePerSqft.toLocaleString()} per sqft
               </p>
             )}
@@ -98,25 +98,25 @@ export default function PropertyCard({ item }: any) {
         )}
 
         {/* Main Content */}
-        <div className="px-6 py-5">
+        <div className="flex-1 px-6 py-6">
           
           {/* Configuration Section */}
           {(item.configuration?.bedrooms || item.configuration?.bathrooms) && (
             <div className="mb-5">
-              <h3 className="text-xs font-bold text-gray-700 uppercase tracking-wide mb-3">
+              <h3 className="mb-3 text-[11px] font-bold uppercase tracking-[0.18em] text-slate-700">
                 Configuration
               </h3>
               <div className="grid grid-cols-2 gap-3">
                 {item.configuration?.bedrooms !== null && item.configuration?.bedrooms !== undefined && (
-                  <div className="bg-blue-50 rounded-xl p-3 text-center">
-                    <p className="text-2xl font-bold text-blue-600">{item.configuration.bedrooms}</p>
-                    <p className="text-xs text-gray-600 mt-1">Bedrooms</p>
+                  <div className="rounded-2xl border border-slate-200/80 bg-slate-50 p-4 text-center">
+                    <p className="text-3xl font-semibold text-[#2157f2]">{item.configuration.bedrooms}</p>
+                    <p className="mt-1 text-xs text-slate-500">Bedrooms</p>
                   </div>
                 )}
                 {item.configuration?.bathrooms !== null && item.configuration?.bathrooms !== undefined && (
-                  <div className="bg-purple-50 rounded-xl p-3 text-center">
-                    <p className="text-2xl font-bold text-purple-600">{item.configuration.bathrooms}</p>
-                    <p className="text-xs text-gray-600 mt-1">Bathrooms</p>
+                  <div className="rounded-2xl border border-violet-200/80 bg-violet-50 p-4 text-center">
+                    <p className="text-3xl font-semibold text-[#6d28d9]">{item.configuration.bathrooms}</p>
+                    <p className="mt-1 text-xs text-slate-500">Bathrooms</p>
                   </div>
                 )}
               </div>
@@ -126,30 +126,30 @@ export default function PropertyCard({ item }: any) {
           {/* Area Section */}
           {(item.area?.superBuiltup || item.area?.carpet || item.area?.plot) && (
             <div className="mb-5">
-              <h3 className="text-xs font-bold text-gray-700 uppercase tracking-wide mb-3">
+              <h3 className="mb-3 text-[11px] font-bold uppercase tracking-[0.18em] text-slate-700">
                 Area Details
               </h3>
               <div className="space-y-2">
                 {item.area?.superBuiltup && (
-                  <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
-                    <span className="text-sm text-gray-600">Super Built-up</span>
-                    <span className="font-semibold text-gray-900">
+                  <div className="flex items-center justify-between rounded-2xl border border-stone-200/80 bg-stone-50 px-4 py-3">
+                    <span className="text-sm text-slate-600">Super Built-up</span>
+                    <span className="font-semibold text-slate-900">
                       {item.area.superBuiltup.toLocaleString()} {item.area?.unit || 'sqft'}
                     </span>
                   </div>
                 )}
                 {item.area?.carpet && (
-                  <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
-                    <span className="text-sm text-gray-600">Carpet Area</span>
-                    <span className="font-semibold text-gray-900">
+                  <div className="flex items-center justify-between rounded-2xl border border-stone-200/80 bg-stone-50 px-4 py-3">
+                    <span className="text-sm text-slate-600">Carpet Area</span>
+                    <span className="font-semibold text-slate-900">
                       {item.area.carpet.toLocaleString()} {item.area?.unit || 'sqft'}
                     </span>
                   </div>
                 )}
                 {item.area?.plot && (
-                  <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
-                    <span className="text-sm text-gray-600">Plot Area</span>
-                    <span className="font-semibold text-gray-900">
+                  <div className="flex items-center justify-between rounded-2xl border border-stone-200/80 bg-stone-50 px-4 py-3">
+                    <span className="text-sm text-slate-600">Plot Area</span>
+                    <span className="font-semibold text-slate-900">
                       {item.area.plot.toLocaleString()} {item.area?.unit || 'sqft'}
                     </span>
                   </div>
@@ -161,37 +161,37 @@ export default function PropertyCard({ item }: any) {
           {/* Financial Details */}
           {(item.financial?.rent || item.financial?.maintenance || item.financial?.bookingAmount) && (
             <div className="mb-5">
-              <h3 className="text-xs font-bold text-gray-700 uppercase tracking-wide mb-3">
+              <h3 className="mb-3 text-[11px] font-bold uppercase tracking-[0.18em] text-slate-700">
                 Financial Details
               </h3>
               <div className="space-y-2">
                 {item.financial?.rent && (
-                  <div className="flex justify-between items-center p-3 bg-orange-50 rounded-lg">
-                    <span className="text-sm text-gray-600">Monthly Rent</span>
+                  <div className="flex items-center justify-between rounded-2xl bg-orange-50 px-4 py-3">
+                    <span className="text-sm text-slate-600">Monthly Rent</span>
                     <span className="font-semibold text-orange-600">{formatCurrency(item.financial.rent)}</span>
                   </div>
                 )}
                 {item.financial?.maintenance && (
-                  <div className="flex justify-between items-center p-3 bg-orange-50 rounded-lg">
-                    <span className="text-sm text-gray-600">Maintenance</span>
+                  <div className="flex items-center justify-between rounded-2xl bg-orange-50 px-4 py-3">
+                    <span className="text-sm text-slate-600">Maintenance</span>
                     <span className="font-semibold text-orange-600">{formatCurrency(item.financial.maintenance)}</span>
                   </div>
                 )}
                 {item.financial?.bookingAmount && (
-                  <div className="flex justify-between items-center p-3 bg-orange-50 rounded-lg">
-                    <span className="text-sm text-gray-600">Booking Amount</span>
+                  <div className="flex items-center justify-between rounded-2xl bg-orange-50 px-4 py-3">
+                    <span className="text-sm text-slate-600">Booking Amount</span>
                     <span className="font-semibold text-orange-600">{formatCurrency(item.financial.bookingAmount)}</span>
                   </div>
                 )}
                 {item.financial?.bookingRate && (
-                  <div className="flex justify-between items-center p-3 bg-orange-50 rounded-lg">
-                    <span className="text-sm text-gray-600">Booking Rate (%)</span>
+                  <div className="flex items-center justify-between rounded-2xl bg-orange-50 px-4 py-3">
+                    <span className="text-sm text-slate-600">Booking Rate (%)</span>
                     <span className="font-semibold text-orange-600">{item.financial.bookingRate}%</span>
                   </div>
                 )}
                 {item.financial?.tpr && (
-                  <div className="flex justify-between items-center p-3 bg-orange-50 rounded-lg">
-                    <span className="text-sm text-gray-600">TPR (%)</span>
+                  <div className="flex items-center justify-between rounded-2xl bg-orange-50 px-4 py-3">
+                    <span className="text-sm text-slate-600">TPR (%)</span>
                     <span className="font-semibold text-orange-600">{item.financial.tpr}%</span>
                   </div>
                 )}
@@ -374,30 +374,30 @@ export default function PropertyCard({ item }: any) {
 
         {/* Broker/Source Information Footer */}
         {(item.sourceMeta || item.isActive !== false) && (
-          <div className="px-6 py-4 bg-gray-50 border-t border-gray-100">
-            <div className="grid grid-cols-2 gap-4 mb-3">
+          <div className="mt-auto border-t border-stone-200/80 bg-[linear-gradient(180deg,_rgba(250,250,249,0.96)_0%,_rgba(245,245,244,0.96)_100%)] px-6 py-4">
+            <div className="mb-3 grid grid-cols-1 gap-4 sm:grid-cols-2">
               {item.sourceMeta?.brokerName && (
                 <div>
-                  <p className="text-xs text-gray-600 mb-1">Broker</p>
-                  <p className="text-sm font-semibold text-gray-900">👤 {item.sourceMeta.brokerName}</p>
+                  <p className="mb-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">Broker</p>
+                  <p className="text-sm font-semibold text-slate-900">👤 {item.sourceMeta.brokerName}</p>
                 </div>
               )}
               {item.sourceMeta?.phone && (
                 <div>
-                  <p className="text-xs text-gray-600 mb-1">Contact</p>
+                  <p className="mb-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">Contact</p>
                   <p className="text-sm font-semibold text-blue-600">📞 {item.sourceMeta.phone}</p>
                 </div>
               )}
               {item.sourceMeta?.companyName && (
                 <div>
-                  <p className="text-xs text-gray-600 mb-1">Company</p>
-                  <p className="text-sm font-semibold text-gray-900">{item.sourceMeta.companyName}</p>
+                  <p className="mb-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">Company</p>
+                  <p className="text-sm font-semibold text-slate-900">{item.sourceMeta.companyName}</p>
                 </div>
               )}
               {item.sourceMeta?.source && (
                 <div>
-                  <p className="text-xs text-gray-600 mb-1">Source</p>
-                  <p className="text-sm font-semibold text-gray-900">{item.sourceMeta.source}</p>
+                  <p className="mb-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">Source</p>
+                  <p className="text-sm font-semibold text-slate-900">{item.sourceMeta.source}</p>
                 </div>
               )}
             </div>
