@@ -51,7 +51,7 @@ export default function SearchBar({ onSearch, data }: any) {
       <div className="relative">
         <input
           className="w-full p-3 pl-10 border rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-black"
-          placeholder="🔍 Search locality, type, segment..."
+          placeholder="🔍 Search locality..."
           value={query}
           onChange={(e) => handleChange(e.target.value)}
           onFocus={() => setShow(true)}

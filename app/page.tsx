@@ -7,65 +7,120 @@ import PropertyCard from "../components/PropertyCard";
 import Filters from "../components/Filters";
 import Loader from "../components/Loader";
 
+type FilterState = {
+  type: string;
+  segment: string;
+  locality: string;
+  bedrooms: string;
+  minPrice: string;
+  maxPrice: string;
+};
+
+const isAreaSearchValue = (value: string) => {
+  const normalizedValue = value.trim().toLowerCase();
+
+  if (!normalizedValue) {
+    return false;
+  }
+
+  return (
+    /\d/.test(normalizedValue) ||
+    normalizedValue.includes("super built") ||
+    normalizedValue.includes("superbuilt") ||
+    normalizedValue.includes("carpet") ||
+    normalizedValue.includes("plot area") ||
+    normalizedValue === "plot" ||
+    normalizedValue.includes("sqft") ||
+    normalizedValue.includes("sq ft") ||
+    normalizedValue.includes("sqyd") ||
+    normalizedValue.includes("sq yd")
+  );
+};
+
 export default function Home() {
   const [data, setData] = useState<any[]>([]);
-  const [filtered, setFiltered] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [searchQuery, setSearchQuery] = useState("");
 
-  const [filters, setFilters] = useState({
+  const [filters, setFilters] = useState<FilterState>({
     type: "",
     segment: "",
-    price: "",
+    locality: "",
+    bedrooms: "",
+    minPrice: "",
+    maxPrice: "",
   });
 
-  // 🔥 API CALL (with search + pagination)
   useEffect(() => {
     setLoading(true);
 
-    let url = `/api/inventory?page=${page}&limit=10`;
+    const trimmedSearchQuery = searchQuery.trim();
+    const trimmedAreaQuery = filters.locality.trim();
 
-    if (searchQuery) {
-      url += `&search=${searchQuery}`;
+    const queryParams = new URLSearchParams({
+      page: String(page),
+      limit: "10",
+    });
+
+    if (trimmedSearchQuery) {
+      queryParams.set("locality", trimmedSearchQuery);
     }
 
-    if (filters.type) {
-      url += `&type=${filters.type}`;
+    if (trimmedAreaQuery) {
+      if (isAreaSearchValue(trimmedAreaQuery)) {
+        queryParams.set("search", trimmedAreaQuery);
+      } else {
+        queryParams.set("locality", trimmedAreaQuery);
+      }
+    }
+    if (filters.type) queryParams.set("type", filters.type);
+    if (filters.segment) queryParams.set("segment", filters.segment);
+    if (filters.minPrice) queryParams.set("minPrice", filters.minPrice);
+    if (filters.maxPrice) queryParams.set("maxPrice", filters.maxPrice);
+
+    if (filters.bedrooms === "5+") {
+      queryParams.set("minBedrooms", "5");
+    } else if (filters.bedrooms) {
+      queryParams.set("minBedrooms", filters.bedrooms);
+      queryParams.set("maxBedrooms", filters.bedrooms);
     }
 
-    if (filters.segment) {
-      url += `&segment=${filters.segment}`;
-    }
-
-    if (filters.price) {
-      url += `&maxPrice=${filters.price}`;
-    }
-
-    api.get(url)
+    api.get(`/api/inventory?${queryParams.toString()}`)
       .then((res) => {
-        setData(res.data.data);
-        setFiltered(res.data.data);
-        setTotalPages(res.data.totalPages);
+        setData(res.data?.data ?? []);
+        setTotalPages(res.data?.totalPages ?? 1);
         setLoading(false);
       })
-      .catch((err) => console.error(err));
+      .catch((err) => {
+        console.error(err);
+        setData([]);
+        setTotalPages(1);
+        setLoading(false);
+      });
   }, [page, searchQuery, filters]);
 
-  // 🔥 SEARCH
   const handleSearch = (query: string) => {
     setSearchQuery(query);
-    setPage(1); // 🔥 reset page
+    setPage(1);
   };
 
-  // 🔥 FILTER
-  const setFilter = (key: string, value: string) => {
-    setFilters((prev) => ({
-      ...prev,
-      [key]: value,
-    }));
+  const applyFilters = (next: FilterState) => {
+    setFilters(next);
+    setPage(1);
+  };
+
+  const clearFilters = () => {
+    setFilters({
+      type: "",
+      segment: "",
+      locality: "",
+      bedrooms: "",
+      minPrice: "",
+      maxPrice: "",
+    });
     setPage(1);
   };
 
@@ -88,7 +143,11 @@ export default function Home() {
         {/* Search + Filters */}
         <div className="bg-white p-4 rounded-xl shadow-md mb-6">
           <SearchBar onSearch={handleSearch} data={data} />
-          <Filters setFilter={setFilter} />
+          <Filters
+            filters={filters}
+            applyFilters={applyFilters}
+            clearFilters={clearFilters}
+          />
         </div>
 
         {/* Content */}
