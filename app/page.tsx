@@ -62,7 +62,7 @@ export default function Home() {
 
     const queryParams = new URLSearchParams({
       page: String(page),
-      limit: "10",
+      limit: "12",
     });
 
     if (trimmedSearchQuery) {
@@ -125,23 +125,51 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(251,191,36,0.16),_transparent_28%),linear-gradient(180deg,_#f8f4ec_0%,_#f4efe7_36%,_#fcfbf8_100%)]">
 
       {/* Header */}
-      <div className="bg-gradient-to-r from-black to-gray-800 text-white p-6">
-        <div className="max-w-7xl mx-auto">
-          <h1 className="text-3xl font-bold">🏠 Find Your Property</h1>
-          <p className="text-sm text-gray-300 mt-1">
-            Search best deals in real estate
-          </p>
+      <div className="relative overflow-hidden border-b border-black/5 bg-[#14202d] text-white">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,_rgba(244,114,182,0.16),_transparent_24%),radial-gradient(circle_at_top_right,_rgba(45,212,191,0.18),_transparent_28%)]" />
+        <div className="relative mx-auto flex max-w-7xl flex-col gap-8 px-4 py-10 sm:px-6 lg:flex-row lg:items-end lg:justify-between lg:px-8 lg:py-14">
+          <div className="max-w-2xl">
+            <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-white/80">
+              Curated Inventory
+            </div>
+            <h1 className="max-w-2xl text-4xl font-semibold leading-tight tracking-tight text-white sm:text-5xl">
+              Find Your Property
+            </h1>
+            <p className="mt-3 max-w-xl text-sm leading-6 text-slate-300 sm:text-base">
+              Explore sharper listings, compare faster, and narrow down the right home or investment with a cleaner search experience.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3 self-start lg:min-w-[320px]">
+            <div className="rounded-2xl border border-white/10 bg-white/8 px-4 py-4 backdrop-blur">
+              <p className="text-xs uppercase tracking-[0.18em] text-slate-400">Per Page</p>
+              <p className="mt-2 text-2xl font-semibold text-white">12</p>
+            </div>
+            <div className="rounded-2xl border border-white/10 bg-white/8 px-4 py-4 backdrop-blur">
+              <p className="text-xs uppercase tracking-[0.18em] text-slate-400">Page</p>
+              <p className="mt-2 text-2xl font-semibold text-white">{page}</p>
+            </div>
+          </div>
         </div>
       </div>
 
       {/* Main */}
-      <div className="p-4 max-w-7xl mx-auto">
+      <div className="mx-auto max-w-7xl px-4 pb-12 pt-6 sm:px-6 lg:px-8 lg:pb-16 lg:pt-8">
 
         {/* Search + Filters */}
-        <div className="bg-white p-4 rounded-xl shadow-md mb-6">
+        <div className="mb-8 overflow-hidden rounded-[28px] border border-white/70 bg-[rgba(255,253,249,0.88)] p-4 shadow-[0_18px_50px_rgba(15,23,42,0.08)] backdrop-blur sm:p-6">
+          <div className="mb-5 flex flex-col gap-3 border-b border-stone-200/80 pb-4 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.22em] text-stone-500">Search Studio</p>
+              <h2 className="mt-2 text-2xl font-semibold tracking-tight text-slate-900">Refine the shortlist</h2>
+            </div>
+            <p className="max-w-md text-sm leading-6 text-slate-500">
+              Use the locality search first, then tighten results with area, BHK, segment, type, and price filters.
+            </p>
+          </div>
           <SearchBar onSearch={handleSearch} data={data} />
           <Filters
             filters={filters}
@@ -159,33 +187,37 @@ export default function Home() {
           </div>
         ) : (
           <>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-3">
               {data.map((item) => (
                 <PropertyCard key={item._id} item={item} />
               ))}
             </div>
 
             {/* Pagination */}
-            <div className="flex justify-center items-center gap-4 mt-8">
-              <button
-                disabled={page === 1}
-                onClick={() => setPage((prev) => prev - 1)}
-                className="px-4 py-2 bg-gray-200 rounded disabled:opacity-50"
-              >
-                Prev
-              </button>
+            <div className="mt-10 rounded-[24px] border border-stone-200/80 bg-white/80 p-3 shadow-[0_14px_30px_rgba(15,23,42,0.05)] backdrop-blur sm:p-4">
+              <div className="grid grid-cols-2 gap-3 sm:flex sm:items-center sm:justify-center">
+                <button
+                  disabled={page === 1}
+                  onClick={() => setPage((prev) => prev - 1)}
+                  className="rounded-full border border-stone-300 bg-stone-100 px-5 py-3 text-sm font-medium text-slate-700 transition hover:bg-stone-200 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  Prev
+                </button>
 
-              <span className="font-semibold">
-                Page {page} of {totalPages}
-              </span>
+                <button
+                  disabled={page === totalPages}
+                  onClick={() => setPage((prev) => prev + 1)}
+                  className="rounded-full bg-[#14202d] px-5 py-3 text-sm font-medium text-white transition hover:bg-[#1d2d40] disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  Next
+                </button>
 
-              <button
-                disabled={page === totalPages}
-                onClick={() => setPage((prev) => prev + 1)}
-                className="px-4 py-2 bg-black text-white rounded disabled:opacity-50"
-              >
-                Next
-              </button>
+                <div className="col-span-2 flex justify-center sm:col-span-1">
+                  <span className="inline-flex min-w-[152px] items-center justify-center rounded-full bg-stone-100 px-5 py-3 text-sm font-semibold text-slate-700">
+                    Page {page} of {totalPages}
+                  </span>
+                </div>
+              </div>
             </div>
           </>
         )}
