@@ -17,38 +17,57 @@ type SearchBarProps = {
 
 export default function SearchBar({ queries, onChange, data }: SearchBarProps) {
   const [suggestions, setSuggestions] = useState<string[]>([]);
-  const [show, setShow] = useState<string | false>(false);
+  const [show, setShow] = useState<"locality" | "society" | false>(false);
   const wrapperRef = useRef<HTMLDivElement>(null);
 
-  const handleFieldChange = useCallback((field: "locality" | "society" | "phone", value: string) => {
-    const nextQueries = { ...queries, [field]: value };
-    onChange(nextQueries);
+  const handleFieldChange = useCallback(
+    (field: "locality" | "society" | "phone", value: string) => {
+      const nextQueries = { ...queries, [field]: value };
+      onChange(nextQueries);
 
-    if (field === "locality" || field === "society") {
-      if (!value) {
+      // ✅ PHONE SEARCH (no suggestions)
+      if (field === "phone") {
         setSuggestions([]);
+        setShow(false);
         return;
       }
-      const sug = data
-        .filter((item) =>
-          item?.address?.locality?.toLowerCase().includes(value.toLowerCase()) ||
-          item?.address?.society?.toLowerCase().includes(value.toLowerCase()) ||
-          item?.type?.toLowerCase().includes(value.toLowerCase()) ||
-          item?.segment?.toLowerCase().includes(value.toLowerCase())
-        )
-        .map((item) => field === "society" ? item.address?.society : (item.address?.locality || item.type))
-        .filter(Boolean)
-        .slice(0, 6);
 
-      setSuggestions([...new Set(sug as string[])]);
-      setShow(field);
-    }
-  }, [data, onChange, queries]);
+      // ✅ LOCALITY / SOCIETY SEARCH
+      if (field === "locality" || field === "society") {
+        if (!value) {
+          setSuggestions([]);
+          return;
+        }
 
-  // Click outside close
+        const sug = data
+          .filter((item) =>
+            item?.address?.locality?.toLowerCase().includes(value.toLowerCase()) ||
+            item?.address?.society?.toLowerCase().includes(value.toLowerCase()) ||
+            item?.type?.toLowerCase().includes(value.toLowerCase()) ||
+            item?.segment?.toLowerCase().includes(value.toLowerCase())
+          )
+          .map((item) =>
+            field === "society"
+              ? item.address?.society
+              : item.address?.locality || item.type
+          )
+          .filter(Boolean)
+          .slice(0, 6);
+
+        setSuggestions([...new Set(sug as string[])]);
+        setShow(field);
+      }
+    },
+    [data, onChange, queries]
+  );
+
+  // ✅ Click outside close
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (wrapperRef.current && !wrapperRef.current.contains(event.target as Node | null)) {
+      if (
+        wrapperRef.current &&
+        !wrapperRef.current.contains(event.target as Node | null)
+      ) {
         setShow(false);
       }
     };
@@ -63,6 +82,7 @@ export default function SearchBar({ queries, onChange, data }: SearchBarProps) {
   return (
     <div ref={wrapperRef} className="relative">
       <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
+        {/* Locality */}
         <div className="relative">
           <input
             className={inputClass}
@@ -72,9 +92,12 @@ export default function SearchBar({ queries, onChange, data }: SearchBarProps) {
             onFocus={() => setShow("locality")}
             autoComplete="off"
           />
-          <span className="absolute left-4 top-1/2 -translate-y-1/2 text-sm text-stone-400" aria-hidden="true">⌕</span>
+          <span className="absolute left-4 top-1/2 -translate-y-1/2 text-sm text-stone-400">
+            ⌕
+          </span>
         </div>
 
+        {/* Society */}
         <div className="relative">
           <input
             className={inputClass}
@@ -84,9 +107,12 @@ export default function SearchBar({ queries, onChange, data }: SearchBarProps) {
             onFocus={() => setShow("society")}
             autoComplete="off"
           />
-          <span className="absolute left-4 top-1/2 -translate-y-1/2 text-sm text-stone-400" aria-hidden="true">B</span>
+          <span className="absolute left-4 top-1/2 -translate-y-1/2 text-sm text-stone-400">
+            B
+          </span>
         </div>
 
+        {/* Phone */}
         <div className="relative">
           <input
             className={inputClass}
@@ -96,23 +122,26 @@ export default function SearchBar({ queries, onChange, data }: SearchBarProps) {
             onChange={(e) => handleFieldChange("phone", e.target.value)}
             autoComplete="tel"
           />
-          <span className="absolute left-4 top-1/2 -translate-y-1/2 text-sm text-stone-400" aria-hidden="true">#</span>
+          <span className="absolute left-4 top-1/2 -translate-y-1/2 text-sm text-stone-400">
+            #
+          </span>
         </div>
       </div>
 
+      {/* Suggestions */}
       {show && suggestions.length > 0 && (
         <div className="absolute z-20 mt-3 max-h-72 w-full overflow-y-auto rounded-[22px] border border-stone-200 bg-white/95 p-2 shadow-[0_20px_40px_rgba(15,23,42,0.12)] backdrop-blur md:max-w-sm">
           {suggestions.map((s, i) => (
             <button
               type="button"
               key={i}
-              className="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-left text-sm text-slate-700 transition hover:bg-stone-100 focus:bg-stone-100 focus:outline-none"
+              className="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-left text-sm text-slate-700 transition hover:bg-stone-100 focus:bg-stone-100"
               onClick={() => {
-                handleFieldChange(show as "locality" | "society", s);
+                handleFieldChange(show, s); // ✅ fixed type
                 setShow(false);
               }}
             >
-              <span className="text-stone-400" aria-hidden="true">⌕</span>
+              <span className="text-stone-400">⌕</span>
               <span>{s}</span>
             </button>
           ))}
