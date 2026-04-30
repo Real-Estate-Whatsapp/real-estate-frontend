@@ -1,4 +1,6 @@
-export default function PropertyCard({ item }: any) {
+import type { PropertyItem } from "./lib/types";
+
+export default function PropertyCard({ item }: { item: PropertyItem }) {
   return (
     <div className="bg-white rounded-2xl p-5 shadow-md hover:shadow-xl transition duration-300 border">
 

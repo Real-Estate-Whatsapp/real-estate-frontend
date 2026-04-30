@@ -1,4 +1,8 @@
-export default function Filters({ setFilter }: any) {
+type FiltersProps = {
+  setFilter: (key: "type" | "segment", value: string) => void;
+};
+
+export default function Filters({ setFilter }: FiltersProps) {
   return (
     <div className="flex gap-2 mb-4 flex-wrap">
       <select onChange={(e) => setFilter("type", e.target.value)} className="border p-2">
