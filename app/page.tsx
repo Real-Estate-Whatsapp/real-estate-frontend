@@ -1,11 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import api from "../lib/api";
-import SearchBar from "../components/SearchBar";
 import PropertyCard from "../components/PropertyCard";
-import Filters from "../components/Filters";
 import Loader from "../components/Loader";
+import Header from "../components/Header";
+import SearchModal from "../components/SearchModal";
+import type { PropertyItem } from "../lib/types";
 
 type FilterState = {
   type: string;
@@ -14,6 +15,14 @@ type FilterState = {
   bedrooms: string;
   minPrice: string;
   maxPrice: string;
+  plotArea: string;
+  transactionType: string;
+};
+
+type SearchQueries = {
+  locality: string;
+  society: string;
+  phone: string;
 };
 
 const isAreaSearchValue = (value: string) => {
@@ -37,13 +46,24 @@ const isAreaSearchValue = (value: string) => {
   );
 };
 
+const isPlotSearchValue = (value: string) => {
+  const normalizedValue = value.trim().toLowerCase();
+
+  return normalizedValue === "plot" || normalizedValue === "plots";
+};
+
 export default function Home() {
-  const [data, setData] = useState<any[]>([]);
+  const [data, setData] = useState<PropertyItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
 
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
-  const [searchQuery, setSearchQuery] = useState("");
+  const [searchQueries, setSearchQueries] = useState({
+    locality: "",
+    society: "",
+    phone: "",
+  });
 
   const [filters, setFilters] = useState<FilterState>({
     type: "",
@@ -52,12 +72,14 @@ export default function Home() {
     bedrooms: "",
     minPrice: "",
     maxPrice: "",
+    plotArea: "",
+    transactionType: "",
   });
 
   useEffect(() => {
-    setLoading(true);
-
-    const trimmedSearchQuery = searchQuery.trim();
+    const trimmedLocality = searchQueries.locality.trim();
+    const trimmedSociety = searchQueries.society.trim();
+    const trimmedPhone = searchQueries.phone.trim();
     const trimmedAreaQuery = filters.locality.trim();
 
     const queryParams = new URLSearchParams({
@@ -65,21 +87,44 @@ export default function Home() {
       limit: "12",
     });
 
-    if (trimmedSearchQuery) {
-      queryParams.set("locality", trimmedSearchQuery);
-    }
+    let combinedSearch = trimmedSociety;
+    const localityLooksLikeArea = isAreaSearchValue(trimmedLocality);
+    const localityLooksLikePlot = isPlotSearchValue(trimmedLocality);
 
     if (trimmedAreaQuery) {
       if (isAreaSearchValue(trimmedAreaQuery)) {
-        queryParams.set("search", trimmedAreaQuery);
+        combinedSearch = combinedSearch ? `${combinedSearch} ${trimmedAreaQuery}` : trimmedAreaQuery;
       } else {
-        queryParams.set("locality", trimmedAreaQuery);
+        const combinedLocality = trimmedLocality ? `${trimmedLocality} ${trimmedAreaQuery}` : trimmedAreaQuery;
+        queryParams.set("locality", combinedLocality);
       }
+    } else if (trimmedLocality && localityLooksLikeArea && !localityLooksLikePlot) {
+      combinedSearch = combinedSearch ? `${combinedSearch} ${trimmedLocality}` : trimmedLocality;
+    } else if (trimmedLocality && !localityLooksLikePlot) {
+      queryParams.set("locality", trimmedLocality);
     }
-    if (filters.type) queryParams.set("type", filters.type);
+
+    if (combinedSearch) {
+      queryParams.set("search", combinedSearch);
+    }
+
+    if (trimmedPhone) {
+      queryParams.set("phone", trimmedPhone);
+    }
+    if (filters.type || localityLooksLikePlot) queryParams.set("type", filters.type || "plot");
     if (filters.segment) queryParams.set("segment", filters.segment);
     if (filters.minPrice) queryParams.set("minPrice", filters.minPrice);
     if (filters.maxPrice) queryParams.set("maxPrice", filters.maxPrice);
+    if (filters.plotArea) {
+      if (filters.plotArea.includes("+")) {
+        queryParams.set("minArea", filters.plotArea.replace("+", ""));
+      } else {
+        const [minArea, maxArea] = filters.plotArea.split("-");
+        if (minArea) queryParams.set("minArea", minArea);
+        if (maxArea) queryParams.set("maxArea", maxArea);
+      }
+    }
+    if (filters.transactionType) queryParams.set("transactionType", filters.transactionType);
 
     if (filters.bedrooms === "5+") {
       queryParams.set("minBedrooms", "5");
@@ -100,19 +145,17 @@ export default function Home() {
         setTotalPages(1);
         setLoading(false);
       });
-  }, [page, searchQuery, filters]);
+  }, [page, searchQueries, filters]);
 
-  const handleSearch = (query: string) => {
-    setSearchQuery(query);
-    setPage(1);
-  };
-
-  const applyFilters = (next: FilterState) => {
+  const applyFilters = useCallback((next: FilterState, nextSearchQueries: SearchQueries) => {
+    setLoading(true);
     setFilters(next);
+    setSearchQueries(nextSearchQueries);
     setPage(1);
-  };
+  }, []);
 
-  const clearFilters = () => {
+  const clearFilters = useCallback(() => {
+    setLoading(true);
     setFilters({
       type: "",
       segment: "",
@@ -120,73 +163,97 @@ export default function Home() {
       bedrooms: "",
       minPrice: "",
       maxPrice: "",
+      plotArea: "",
+      transactionType: "",
+    });
+    setSearchQueries({
+      locality: "",
+      society: "",
+      phone: "",
     });
     setPage(1);
-  };
+  }, []);
+
+  const activeFilterCount = useMemo(() => {
+    return [
+      searchQueries.locality,
+      searchQueries.society,
+      searchQueries.phone,
+      filters.type,
+      filters.segment,
+      filters.locality,
+      filters.bedrooms,
+      filters.minPrice,
+      filters.maxPrice,
+      filters.plotArea,
+      filters.transactionType,
+    ].filter(Boolean).length;
+  }, [filters, searchQueries]);
+
+  const searchSummary = useMemo(() => {
+    const parts = [
+      searchQueries.locality,
+      searchQueries.society,
+      searchQueries.phone,
+      filters.transactionType,
+      filters.segment,
+      filters.type,
+      filters.bedrooms ? `${filters.bedrooms} BHK` : "",
+      filters.plotArea ? `${filters.plotArea} sq ft` : "",
+    ].filter(Boolean);
+
+    return parts.length > 0 ? parts.join(" • ") : "Search by locality, society, phone, budget, area, or BHK";
+  }, [filters, searchQueries]);
 
   return (
-    <div className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(251,191,36,0.16),_transparent_28%),linear-gradient(180deg,_#f8f4ec_0%,_#f4efe7_36%,_#fcfbf8_100%)]">
+    <div className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(251,191,36,0.14),_transparent_24%),linear-gradient(180deg,_#f6efe4_0%,_#f8f3eb_34%,_#fcfbf8_100%)]">
+      <Header activeFilterCount={activeFilterCount} onOpenSearch={() => setIsSearchOpen(true)} />
 
-      {/* Header */}
-      <div className="relative overflow-hidden border-b border-black/5 bg-[#14202d] text-white">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,_rgba(244,114,182,0.16),_transparent_24%),radial-gradient(circle_at_top_right,_rgba(45,212,191,0.18),_transparent_28%)]" />
-        <div className="relative mx-auto flex max-w-7xl flex-col gap-8 px-4 py-10 sm:px-6 lg:flex-row lg:items-end lg:justify-between lg:px-8 lg:py-14">
-          <div className="max-w-2xl">
-            <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-white/80">
-              Curated Inventory
-            </div>
-            <h1 className="max-w-2xl text-4xl font-semibold leading-tight tracking-tight text-white sm:text-5xl">
-              Find Your Property
-            </h1>
-            <p className="mt-3 max-w-xl text-sm leading-6 text-slate-300 sm:text-base">
-              Explore sharper listings, compare faster, and narrow down the right home or investment with a cleaner search experience.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-2 gap-3 self-start lg:min-w-[320px]">
-            <div className="rounded-2xl border border-white/10 bg-white/8 px-4 py-4 backdrop-blur">
-              <p className="text-xs uppercase tracking-[0.18em] text-slate-400">Per Page</p>
-              <p className="mt-2 text-2xl font-semibold text-white">12</p>
-            </div>
-            <div className="rounded-2xl border border-white/10 bg-white/8 px-4 py-4 backdrop-blur">
-              <p className="text-xs uppercase tracking-[0.18em] text-slate-400">Page</p>
-              <p className="mt-2 text-2xl font-semibold text-white">{page}</p>
-            </div>
-          </div>
-        </div>
-      </div>
+      <SearchModal
+        isOpen={isSearchOpen}
+        onClose={() => setIsSearchOpen(false)}
+        filters={filters}
+        searchQueries={searchQueries}
+        data={data}
+        applyFilters={applyFilters}
+        clearFilters={clearFilters}
+      />
 
       {/* Main */}
-      <div className="mx-auto max-w-7xl px-4 pb-12 pt-6 sm:px-6 lg:px-8 lg:pb-16 lg:pt-8">
-
-        {/* Search + Filters */}
-        <div className="mb-8 overflow-hidden rounded-[28px] border border-white/70 bg-[rgba(255,253,249,0.88)] p-4 shadow-[0_18px_50px_rgba(15,23,42,0.08)] backdrop-blur sm:p-6">
-          <div className="mb-5 flex flex-col gap-3 border-b border-stone-200/80 pb-4 sm:flex-row sm:items-end sm:justify-between">
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.22em] text-stone-500">Search Studio</p>
-              <h2 className="mt-2 text-2xl font-semibold tracking-tight text-slate-900">Refine the shortlist</h2>
+      <div className="relative mx-auto mt-4 max-w-7xl px-3 pb-8 sm:mt-8 sm:px-6 lg:px-8">
+        <section className="mb-5 overflow-hidden rounded-[24px] border border-white/80 bg-[linear-gradient(180deg,_rgba(255,254,250,0.96)_0%,_rgba(255,250,242,0.94)_100%)] p-4 shadow-[0_24px_70px_rgba(15,23,42,0.12)] backdrop-blur sm:mb-8 sm:rounded-[30px] sm:p-6">
+          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+            <div className="min-w-0">
+              <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.24em] text-stone-500">Smart Search</p>
+              <h1 className="text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">Find matching properties</h1>
+              <p className="mt-2 line-clamp-2 text-sm leading-6 text-slate-500 sm:text-base">{searchSummary}</p>
             </div>
-            <p className="max-w-md text-sm leading-6 text-slate-500">
-              Use the locality search first, then tighten results with area, BHK, segment, type, and price filters.
-            </p>
+            <button
+              type="button"
+              onClick={() => setIsSearchOpen(true)}
+              className="inline-flex h-14 w-full items-center justify-center rounded-[18px] bg-[#14202d] px-6 text-sm font-semibold text-white shadow-[0_14px_30px_rgba(20,32,45,0.22)] transition hover:-translate-y-0.5 hover:bg-[#1b3045] focus:outline-none focus:ring-4 focus:ring-slate-900/10 active:translate-y-0 md:w-auto"
+            >
+              {activeFilterCount > 0 ? "Update search" : "Start search"}
+            </button>
           </div>
-          <SearchBar onSearch={handleSearch} data={data} />
-          <Filters
-            filters={filters}
-            applyFilters={applyFilters}
-            clearFilters={clearFilters}
-          />
-        </div>
+        </section>
 
         {/* Content */}
         {loading ? (
           <Loader />
         ) : data.length === 0 ? (
-          <div className="text-center py-10">
-            <p className="text-gray-500 text-lg">No results found 😔</p>
+          <div className="rounded-[28px] border border-dashed border-stone-300 bg-white/70 px-6 py-12 text-center shadow-[0_12px_30px_rgba(15,23,42,0.05)]">
+            <p className="text-lg font-semibold text-slate-700">No results found</p>
+            <p className="mt-2 text-sm text-slate-500">Try a different locality or clear a few filters.</p>
           </div>
         ) : (
           <>
+            <div className="mb-5 flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+              <div>
+                <p className="hidden sm:block text-[10px] font-semibold uppercase tracking-[0.24em] text-stone-500 mb-2">Listings</p>
+                <h3 className="mt-1 text-lg font-bold tracking-tight text-slate-900 sm:text-2xl">Browse Results</h3>
+              </div>
+            </div>
             <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-3">
               {data.map((item) => (
                 <PropertyCard key={item._id} item={item} />
@@ -198,7 +265,10 @@ export default function Home() {
               <div className="grid grid-cols-2 gap-3 sm:flex sm:items-center sm:justify-center">
                 <button
                   disabled={page === 1}
-                  onClick={() => setPage((prev) => prev - 1)}
+                  onClick={() => {
+                    setLoading(true);
+                    setPage((prev) => prev - 1);
+                  }}
                   className="rounded-full border border-stone-300 bg-stone-100 px-5 py-3 text-sm font-medium text-slate-700 transition hover:bg-stone-200 disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   Prev
@@ -206,7 +276,10 @@ export default function Home() {
 
                 <button
                   disabled={page === totalPages}
-                  onClick={() => setPage((prev) => prev + 1)}
+                  onClick={() => {
+                    setLoading(true);
+                    setPage((prev) => prev + 1);
+                  }}
                   className="rounded-full bg-[#14202d] px-5 py-3 text-sm font-medium text-white transition hover:bg-[#1d2d40] disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   Next

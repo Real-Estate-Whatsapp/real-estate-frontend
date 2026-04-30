@@ -1,8 +1,14 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
+import type { PropertyItem } from "./lib/types";
 
-export default function SearchBar({ onSearch, data }: any) {
+type SearchBarProps = {
+  onSearch: (value: string) => void;
+  data: PropertyItem[];
+};
+
+export default function SearchBar({ onSearch, data }: SearchBarProps) {
   const [query, setQuery] = useState("");
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [show, setShow] = useState(false);
@@ -19,12 +25,12 @@ export default function SearchBar({ onSearch, data }: any) {
     }
 
     const sug = data
-      .filter((item: any) =>
+      .filter((item) =>
         item?.address?.locality?.toLowerCase().includes(value.toLowerCase()) ||
         item?.type?.toLowerCase().includes(value.toLowerCase()) ||
         item?.segment?.toLowerCase().includes(value.toLowerCase())
       )
-      .map((item: any) => item.address?.locality || item.type)
+      .map((item) => item.address?.locality || item.type)
       .filter(Boolean)
       .slice(0, 6);
 
@@ -34,8 +40,8 @@ export default function SearchBar({ onSearch, data }: any) {
 
   // 🔥 Click outside close
   useEffect(() => {
-    const handleClickOutside = (event: any) => {
-      if (wrapperRef.current && !wrapperRef.current.contains(event.target)) {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (wrapperRef.current && !wrapperRef.current.contains(event.target as Node | null)) {
         setShow(false);
       }
     };
