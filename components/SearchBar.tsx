@@ -25,14 +25,14 @@ export default function SearchBar({ queries, onChange, data }: SearchBarProps) {
       const nextQueries = { ...queries, [field]: value };
       onChange(nextQueries);
 
-      // ✅ PHONE SEARCH (no suggestions)
+      // ✅ PHONE SEARCH
       if (field === "phone") {
         setSuggestions([]);
         setShow(false);
         return;
       }
 
-      // ✅ LOCALITY / SOCIETY SEARCH
+      // ✅ LOCALITY 
       if (field === "locality" || field === "society") {
         if (!value) {
           setSuggestions([]);
