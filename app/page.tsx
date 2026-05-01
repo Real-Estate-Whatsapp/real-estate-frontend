@@ -134,11 +134,11 @@ export default function Home() {
     }
 
     api.get(`/api/inventory?${queryParams.toString()}`)
-      .then((res) => {
-        setData(res.data?.data ?? []);
-        setTotalPages(res.data?.totalPages ?? 1);
-        setLoading(false);
-      })
+  .then((res) => {
+    setData(res.data?.data ?? []);  
+    setTotalPages(res.data?.totalPages ?? 1);
+    setLoading(false);
+  })
       .catch((err) => {
         console.error(err);
         setData([]);
