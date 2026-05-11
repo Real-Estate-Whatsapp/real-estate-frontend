@@ -77,7 +77,7 @@ export default function SearchBar({ queries, onChange, data }: SearchBarProps) {
   }, []);
 
   const inputClass =
-    "h-[52px] w-full rounded-[18px] border border-stone-300/80 bg-white px-4 pl-11 text-[15px] text-slate-900 shadow-[0_10px_26px_rgba(15,23,42,0.06)] outline-none transition placeholder:text-stone-400 focus:border-[#14202d] focus:ring-4 focus:ring-slate-900/10";
+    "h-12 w-full rounded-lg border border-stone-200 bg-white px-4 pl-11 text-sm font-medium text-slate-900 shadow-[0_8px_24px_rgba(15,23,42,0.05)] outline-none transition placeholder:font-normal placeholder:text-stone-400 focus:border-[#14202d] focus:bg-white focus:ring-4 focus:ring-slate-900/10 sm:h-[52px] sm:text-[15px]";
 
   return (
     <div ref={wrapperRef} className="relative">
@@ -130,12 +130,12 @@ export default function SearchBar({ queries, onChange, data }: SearchBarProps) {
 
       {/* Suggestions */}
       {show && suggestions.length > 0 && (
-        <div className="absolute z-20 mt-3 max-h-72 w-full overflow-y-auto rounded-[22px] border border-stone-200 bg-white/95 p-2 shadow-[0_20px_40px_rgba(15,23,42,0.12)] backdrop-blur md:max-w-sm">
+        <div className="absolute z-20 mt-2 max-h-72 w-full overflow-y-auto rounded-lg border border-stone-200 bg-white/95 p-2 shadow-[0_20px_40px_rgba(15,23,42,0.12)] backdrop-blur md:max-w-sm">
           {suggestions.map((s, i) => (
             <button
               type="button"
               key={i}
-              className="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-left text-sm text-slate-700 transition hover:bg-stone-100 focus:bg-stone-100"
+              className="flex w-full items-center gap-3 rounded-md px-4 py-3 text-left text-sm text-slate-700 transition hover:bg-stone-100 focus:bg-stone-100"
               onClick={() => {
                 handleFieldChange(show, s); // ✅ fixed type
                 setShow(false);

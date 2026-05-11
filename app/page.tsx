@@ -1,10 +1,11 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import api from "../lib/api";
 import PropertyCard from "../components/PropertyCard";
 import Loader from "../components/Loader";
 import Header from "../components/Header";
+import HeroSearchBar from "../components/HeroSearchBar";
 import SearchModal from "../components/SearchModal";
 import type { PropertyItem } from "../lib/types";
 
@@ -25,8 +26,19 @@ type SearchQueries = {
   phone: string;
 };
 
+const PAGE_SIZE = 12;
+const PROPERTY_ID_START = 10000;
+
+const normalizeSearchValue = (value: string) =>
+  value
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9\s]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+
 const isAreaSearchValue = (value: string) => {
-  const normalizedValue = value.trim().toLowerCase();
+  const normalizedValue = normalizeSearchValue(value);
 
   if (!normalizedValue) {
     return false;
@@ -38,7 +50,6 @@ const isAreaSearchValue = (value: string) => {
     normalizedValue.includes("superbuilt") ||
     normalizedValue.includes("carpet") ||
     normalizedValue.includes("plot area") ||
-    normalizedValue === "plot" ||
     normalizedValue.includes("sqft") ||
     normalizedValue.includes("sq ft") ||
     normalizedValue.includes("sqyd") ||
@@ -47,15 +58,102 @@ const isAreaSearchValue = (value: string) => {
 };
 
 const isPlotSearchValue = (value: string) => {
-  const normalizedValue = value.trim().toLowerCase();
+  const normalizedValue = normalizeSearchValue(value);
+  if (!normalizedValue) return false;
 
-  return normalizedValue === "plot" || normalizedValue === "plots";
+  return normalizedValue.split(" ").some((token) =>
+    ["plot", "plots", "ploat", "land", "lands", "site", "sites"].includes(token)
+  );
+};
+
+const getTextValues = (value: unknown): string[] => {
+  if (typeof value === "string" || typeof value === "number") {
+    return [String(value)];
+  }
+
+  if (Array.isArray(value)) {
+    return value.flatMap((entry) => getTextValues(entry));
+  }
+
+  if (value && typeof value === "object") {
+    return Object.values(value as Record<string, unknown>).flatMap((entry) => getTextValues(entry));
+  }
+
+  return [];
+};
+
+const isPlotProperty = (item: PropertyItem) => {
+  const typeValue = normalizeSearchValue(item.type ?? "");
+  const listingTypeValue = normalizeSearchValue(item.listingType ?? "");
+
+  return [typeValue, listingTypeValue].some((value) =>
+    ["plot", "plots", "land", "lands", "site", "sites"].includes(value)
+  );
+};
+
+const isPlotSearchMatch = (item: PropertyItem) => {
+  if (isPlotProperty(item)) {
+    return true;
+  }
+
+  const itemWithExtras = item as PropertyItem & {
+    title?: string;
+    description?: string;
+    category?: string;
+    tags?: unknown;
+  };
+
+  const searchableValues = [
+    itemWithExtras.title,
+    itemWithExtras.description,
+    itemWithExtras.category,
+    itemWithExtras.tags,
+    item.type,
+    item.listingType,
+    item.segment,
+    item.address,
+    item.plotDetails,
+  ];
+
+  const combinedText = normalizeSearchValue(getTextValues(searchableValues).join(" "));
+  return combinedText.includes("plot");
+};
+
+const getNumericPlotArea = (item: PropertyItem) => {
+  const plotArea = item.area?.plot;
+  if (typeof plotArea === "number") return plotArea;
+  if (typeof plotArea === "string") {
+    const parsed = Number(plotArea);
+    return Number.isFinite(parsed) ? parsed : null;
+  }
+  return null;
+};
+
+const matchesPlotAreaFilter = (item: PropertyItem, plotAreaFilter: string) => {
+  if (!plotAreaFilter) return true;
+
+  const areaValue = getNumericPlotArea(item);
+  if (areaValue === null) return false;
+
+  if (plotAreaFilter.includes("+")) {
+    const minValue = Number(plotAreaFilter.replace("+", ""));
+    if (!Number.isFinite(minValue)) return true;
+    return areaValue >= minValue;
+  }
+
+  const [minRaw, maxRaw] = plotAreaFilter.split("-");
+  const minValue = Number(minRaw);
+  const maxValue = Number(maxRaw);
+
+  if (!Number.isFinite(minValue) || !Number.isFinite(maxValue)) return true;
+  return areaValue >= minValue && areaValue <= maxValue;
 };
 
 export default function Home() {
   const [data, setData] = useState<PropertyItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const strictCacheRef = useRef<{ key: string; items: PropertyItem[] } | null>(null);
 
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
@@ -77,19 +175,18 @@ export default function Home() {
   });
 
   useEffect(() => {
+    let isActive = true;
+
     const trimmedLocality = searchQueries.locality.trim();
     const trimmedSociety = searchQueries.society.trim();
     const trimmedPhone = searchQueries.phone.trim();
     const trimmedAreaQuery = filters.locality.trim();
-
-    const queryParams = new URLSearchParams({
-      page: String(page),
-      limit: "12",
-    });
+    const queryParams = new URLSearchParams();
 
     let combinedSearch = trimmedSociety;
     const localityLooksLikeArea = isAreaSearchValue(trimmedLocality);
     const localityLooksLikePlot = isPlotSearchValue(trimmedLocality);
+    const societyLooksLikePlot = isPlotSearchValue(trimmedSociety);
 
     if (trimmedAreaQuery) {
       if (isAreaSearchValue(trimmedAreaQuery)) {
@@ -111,7 +208,12 @@ export default function Home() {
     if (trimmedPhone) {
       queryParams.set("phone", trimmedPhone);
     }
-    if (filters.type || localityLooksLikePlot) queryParams.set("type", filters.type || "plot");
+    const isTypePlot = isPlotSearchValue(filters.type);
+    const shouldForcePlotOnly = localityLooksLikePlot || societyLooksLikePlot || isTypePlot;
+    const hasStrictClientFiltering = shouldForcePlotOnly || Boolean(filters.plotArea);
+    const currentStrictKey = JSON.stringify({ searchQueries, filters, shouldForcePlotOnly });
+
+    if (filters.type || shouldForcePlotOnly) queryParams.set("type", filters.type || "plot");
     if (filters.segment) queryParams.set("segment", filters.segment);
     if (filters.minPrice) queryParams.set("minPrice", filters.minPrice);
     if (filters.maxPrice) queryParams.set("maxPrice", filters.maxPrice);
@@ -133,18 +235,99 @@ export default function Home() {
       queryParams.set("maxBedrooms", filters.bedrooms);
     }
 
-    api.get(`/api/inventory?${queryParams.toString()}`)
-  .then((res) => {
-    setData(res.data?.data ?? []);  
-    setTotalPages(res.data?.totalPages ?? 1);
-    setLoading(false);
-  })
-      .catch((err) => {
+    const applyStrictFilters = (items: PropertyItem[]) => {
+      const plotIntentFilteredData = shouldForcePlotOnly ? items.filter(isPlotSearchMatch) : items;
+      return filters.plotArea
+        ? plotIntentFilteredData.filter((item) => matchesPlotAreaFilter(item, filters.plotArea))
+        : plotIntentFilteredData;
+    };
+
+    const paginate = (items: PropertyItem[], currentPage: number) => {
+      const computedTotalPages = Math.max(1, Math.ceil(items.length / PAGE_SIZE));
+      const safePage = Math.min(currentPage, computedTotalPages);
+      const start = (safePage - 1) * PAGE_SIZE;
+      const end = start + PAGE_SIZE;
+      return { safePage, computedTotalPages, pageData: items.slice(start, end) };
+    };
+
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+
+        if (hasStrictClientFiltering) {
+          if (strictCacheRef.current?.key === currentStrictKey) {
+            const { safePage, computedTotalPages, pageData } = paginate(strictCacheRef.current.items, page);
+            if (!isActive) return;
+            setData(pageData);
+            setTotalPages(computedTotalPages);
+            if (safePage !== page) setPage(safePage);
+            setLoading(false);
+            return;
+          }
+
+          const strictLimit = "100";
+          const firstPageParams = new URLSearchParams(queryParams);
+          firstPageParams.set("page", "1");
+          firstPageParams.set("limit", strictLimit);
+
+          const firstRes = await api.get(`/api/inventory?${firstPageParams.toString()}`);
+          const firstPageData: PropertyItem[] = firstRes.data?.data ?? [];
+          const serverTotalPages = Math.max(1, Number(firstRes.data?.totalPages ?? 1));
+
+          let allData = firstPageData;
+          if (serverTotalPages > 1) {
+            const pageRequests: Promise<{ data?: { data?: PropertyItem[] } }>[] = [];
+            for (let nextPage = 2; nextPage <= serverTotalPages; nextPage += 1) {
+              const nextParams = new URLSearchParams(queryParams);
+              nextParams.set("page", String(nextPage));
+              nextParams.set("limit", strictLimit);
+              pageRequests.push(api.get(`/api/inventory?${nextParams.toString()}`));
+            }
+
+            const pageResponses = await Promise.all(pageRequests);
+            allData = [
+              ...firstPageData,
+              ...pageResponses.flatMap((response) => response.data?.data ?? []),
+            ];
+          }
+
+          const filtered = applyStrictFilters(allData);
+          const { safePage, computedTotalPages, pageData } = paginate(filtered, page);
+
+          if (!isActive) return;
+          strictCacheRef.current = { key: currentStrictKey, items: filtered };
+          setData(pageData);
+          setTotalPages(computedTotalPages);
+          if (safePage !== page) setPage(safePage);
+          setLoading(false);
+          return;
+        }
+
+        strictCacheRef.current = null;
+
+        const pageParams = new URLSearchParams(queryParams);
+        pageParams.set("page", String(page));
+        pageParams.set("limit", String(PAGE_SIZE));
+
+        const res = await api.get(`/api/inventory?${pageParams.toString()}`);
+        if (!isActive) return;
+        setData(res.data?.data ?? []);
+        setTotalPages(Math.max(1, Number(res.data?.totalPages ?? 1)));
+        setLoading(false);
+      } catch (err) {
         console.error(err);
+        if (!isActive) return;
         setData([]);
         setTotalPages(1);
         setLoading(false);
-      });
+      }
+    };
+
+    fetchData();
+
+    return () => {
+      isActive = false;
+    };
   }, [page, searchQueries, filters]);
 
   const applyFilters = useCallback((next: FilterState, nextSearchQueries: SearchQueries) => {
@@ -190,21 +373,6 @@ export default function Home() {
     ].filter(Boolean).length;
   }, [filters, searchQueries]);
 
-  const searchSummary = useMemo(() => {
-    const parts = [
-      searchQueries.locality,
-      searchQueries.society,
-      searchQueries.phone,
-      filters.transactionType,
-      filters.segment,
-      filters.type,
-      filters.bedrooms ? `${filters.bedrooms} BHK` : "",
-      filters.plotArea ? `${filters.plotArea} sq ft` : "",
-    ].filter(Boolean);
-
-    return parts.length > 0 ? parts.join(" • ") : "Search by locality, society, phone, budget, area, or BHK";
-  }, [filters, searchQueries]);
-
   return (
     <div className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(251,191,36,0.14),_transparent_24%),linear-gradient(180deg,_#f6efe4_0%,_#f8f3eb_34%,_#fcfbf8_100%)]">
       <Header activeFilterCount={activeFilterCount} onOpenSearch={() => setIsSearchOpen(true)} />
@@ -221,20 +389,15 @@ export default function Home() {
 
       {/* Main */}
       <div className="relative mx-auto mt-4 max-w-7xl px-3 pb-8 sm:mt-8 sm:px-6 lg:px-8">
-        <section className="mb-5 overflow-hidden rounded-[24px] border border-white/80 bg-[linear-gradient(180deg,_rgba(255,254,250,0.96)_0%,_rgba(255,250,242,0.94)_100%)] p-4 shadow-[0_24px_70px_rgba(15,23,42,0.12)] backdrop-blur sm:mb-8 sm:rounded-[30px] sm:p-6">
-          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-            <div className="min-w-0">
-              <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.24em] text-stone-500">Smart Search</p>
-              <h1 className="text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">Find matching properties</h1>
-              <p className="mt-2 line-clamp-2 text-sm leading-6 text-slate-500 sm:text-base">{searchSummary}</p>
+        <section className="mb-5 overflow-visible rounded-[24px] border border-white/80 bg-[linear-gradient(180deg,_rgba(255,254,250,0.96)_0%,_rgba(255,250,242,0.94)_100%)] p-4 shadow-[0_24px_70px_rgba(15,23,42,0.12)] backdrop-blur sm:mb-8 sm:rounded-[30px] sm:p-6">
+          <div className="grid gap-5 lg:items-center">
+            <div className="flex flex-col items-stretch gap-3">
+              <HeroSearchBar
+                onClick={() => setIsSearchOpen(true)}
+                queries={searchQueries}
+                onChange={setSearchQueries}
+              />
             </div>
-            <button
-              type="button"
-              onClick={() => setIsSearchOpen(true)}
-              className="inline-flex h-14 w-full items-center justify-center rounded-[18px] bg-[#14202d] px-6 text-sm font-semibold text-white shadow-[0_14px_30px_rgba(20,32,45,0.22)] transition hover:-translate-y-0.5 hover:bg-[#1b3045] focus:outline-none focus:ring-4 focus:ring-slate-900/10 active:translate-y-0 md:w-auto"
-            >
-              {activeFilterCount > 0 ? "Update search" : "Start search"}
-            </button>
           </div>
         </section>
 
@@ -250,13 +413,16 @@ export default function Home() {
           <>
             <div className="mb-5 flex flex-col sm:flex-row sm:items-end justify-between gap-4">
               <div>
-                <p className="hidden sm:block text-[10px] font-semibold uppercase tracking-[0.24em] text-stone-500 mb-2">Listings</p>
-                <h3 className="mt-1 text-lg font-bold tracking-tight text-slate-900 sm:text-2xl">Browse Results</h3>
+                <h3 className="mt-1 text-lg font-bold tracking-tight text-slate-900 sm:text-2xl">Search Across</h3>
               </div>
             </div>
             <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-3">
-              {data.map((item) => (
-                <PropertyCard key={item._id} item={item} />
+              {data.map((item, index) => (
+                <PropertyCard
+                  key={item._id}
+                  item={item}
+                  displayId={`PRP-${PROPERTY_ID_START + (page - 1) * PAGE_SIZE + index}`}
+                />
               ))}
             </div>
 

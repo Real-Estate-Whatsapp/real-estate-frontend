@@ -17,7 +17,8 @@ export default function Header({ activeFilterCount, onOpenSearch }: HeaderProps)
             alt="Proply logo"
             width={160}
             height={54}
-            priority
+            preload
+            unoptimized
             className="h-auto w-[112px] shrink-0 object-contain sm:w-[140px]"
           />
           <div className="hidden h-8 w-px bg-stone-300 sm:block" />

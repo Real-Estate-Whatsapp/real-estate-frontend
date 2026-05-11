@@ -37,7 +37,10 @@ export default function Modal({ isOpen, onClose, title, children, size = "sm" }:
 
   if (!isOpen) return null;
 
-  const panelSize = size === "search" ? "max-w-4xl sm:p-6" : "max-w-sm sm:p-8";
+  const panelSize =
+    size === "search"
+      ? "max-w-[min(920px,calc(100vw-24px))] px-4 py-5 sm:px-6 sm:py-6"
+      : "max-w-sm px-5 py-6 sm:p-8";
 
   return (
     <div
@@ -47,12 +50,12 @@ export default function Modal({ isOpen, onClose, title, children, size = "sm" }:
       aria-labelledby={title ? titleId : undefined}
     >
       <div
-        className="absolute inset-0 bg-slate-900/45 backdrop-blur-sm transition-opacity duration-200"
+        className="absolute inset-0 bg-slate-950/45 backdrop-blur-[3px] transition-opacity duration-200"
         onClick={onClose}
       />
 
       <div
-        className={`relative max-h-[92dvh] w-full overflow-y-auto rounded-t-[28px] border border-white/80 bg-white p-5 shadow-2xl transition-all duration-200 sm:max-h-[88vh] sm:rounded-[28px] ${panelSize}`}
+        className={`relative max-h-[92dvh] w-full overflow-y-auto rounded-t-2xl border border-white/90 bg-[#fffdf9] shadow-[0_24px_80px_rgba(15,23,42,0.24)] transition-all duration-200 sm:max-h-[88vh] sm:rounded-lg ${panelSize}`}
       >
         <button
           type="button"
@@ -64,7 +67,7 @@ export default function Modal({ isOpen, onClose, title, children, size = "sm" }:
         </button>
 
         {title && (
-          <h3 id={titleId} className="mb-5 pr-12 text-xl font-bold tracking-tight text-slate-900 sm:text-2xl">
+          <h3 id={titleId} className="mb-5 pr-12 text-lg font-bold tracking-tight text-slate-950 sm:text-2xl">
             {title}
           </h3>
         )}

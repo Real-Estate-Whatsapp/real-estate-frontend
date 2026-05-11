@@ -4,7 +4,7 @@ import { useState } from 'react';
 import Modal from './Modal';
 import type { PropertyItem } from '../lib/types';
 
-export default function PropertyCard({ item }: { item: PropertyItem }) {
+export default function PropertyCard({ item, displayId }: { item: PropertyItem; displayId?: string }) {
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   // Helper function to format currency
@@ -15,6 +15,13 @@ export default function PropertyCard({ item }: { item: PropertyItem }) {
     return `₹${value?.toLocaleString()}`;
   };
 
+  const transactionLabels: Record<string, string> = {
+    sell: '🏷️ Sell',
+    rent: '🔑 Rent',
+    buy: '💳 Buy',
+    selfRent: '🏠 Self Rent',
+  };
+
   // Check if card has essential data
   const hasEssentialData = item?.address || item?.type;
 
@@ -22,76 +29,67 @@ export default function PropertyCard({ item }: { item: PropertyItem }) {
     return null;
   }
 
+  const contactName = item.sourceMeta?.name || item.sourceMeta?.brokerName || item.contact?.name || '';
   const phoneNumber = item.sourceMeta?.phone || item.contact?.phone || '';
+  const whatsappNumber = phoneNumber.replace(/\D/g, '');
+  const transactionLabel = item.transactionType ? transactionLabels[item.transactionType] : undefined;
 
   return (
-    <div className="mx-auto h-full w-full max-w-lg">
-      <div className="group flex h-full flex-col overflow-hidden rounded-[20px] sm:rounded-[28px] border border-stone-200/80 bg-white shadow-sm transition-all duration-300 hover:shadow-md relative">
+    <div className="mx-auto h-full w-full max-w-[430px] sm:max-w-none">
+      <div className="group relative flex h-full flex-col overflow-hidden rounded-lg border border-stone-200 bg-white shadow-[0_10px_28px_rgba(15,23,42,0.06)] transition duration-200 hover:-translate-y-0.5 hover:border-stone-300 hover:shadow-[0_16px_36px_rgba(15,23,42,0.1)]">
         
         {/* Header Section */}
-        <div className="border-b border-stone-100 bg-stone-50/50 px-3 py-3 sm:px-6 sm:py-6">
-          <div className="mb-2 flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
-            <div className="flex-1">
-              <div className="mb-1 flex items-center justify-between">
-                <span className="text-[10px] font-mono font-medium text-slate-400">ID: {item._id || item.id || 'N/A'}</span>
+        <div className="border-b border-stone-100 bg-[linear-gradient(180deg,#fffefa_0%,#faf7f0_100%)] p-4 sm:p-5">
+          <div className="flex min-w-0 flex-col gap-3">
+            <div className="min-w-0">
+              <div className="mb-2 flex min-w-0 items-start justify-between gap-3">
+                <div className="flex flex-wrap gap-1.5">
+                  {item.segment && (
+                    <span className="inline-flex min-h-6 items-center rounded-md bg-[#5a3df0] px-2 text-[10px] font-bold uppercase text-white">
+                      {item.segment.toUpperCase()}
+                    </span>
+                  )}
+                </div>
+                <span className="max-w-[48%] break-all text-right font-mono text-[10px] font-medium leading-4 text-slate-400 sm:max-w-[52%]">
+                  ID: {displayId || item.id || item._id || 'N/A'}
+                </span>
               </div>
-              <h2 className="max-w-[20ch] text-lg sm:text-2xl font-bold leading-tight sm:leading-[1.1] tracking-tight text-slate-900">
-                {item.address?.locality || 'Property'}
+              {transactionLabel && (
+                <div className="mb-2 inline-flex min-h-8 items-center rounded-md border border-stone-200 bg-white px-2.5 text-xs font-semibold text-slate-700 shadow-sm sm:text-sm">
+                  {transactionLabel}
+                </div>
+              )}
+              <h2 className="max-w-full break-words text-xl font-bold leading-snug text-slate-950 sm:text-2xl">
+                📍 {item.address?.locality || 'Property'}
               </h2>
-              <p className="mt-1 sm:mt-2 text-xs sm:text-sm text-slate-500 flex items-center gap-1 line-clamp-1">
-                📍 {item.address?.society && `${item.address.society} • `}
-                {item.address?.city || 'Location'}
-              </p>
             </div>
-            <div className="flex flex-wrap gap-1.5 sm:justify-end">
-              {item.listingType && (
-                <span className="rounded-md bg-[#2157f2] px-2 py-0.5 text-[10px] font-bold tracking-wide text-white">
-                  {item.listingType.toUpperCase()}
-                </span>
-              )}
-              {item.segment && (
-                <span className="rounded-md bg-[#5a3df0] px-2 py-0.5 text-[10px] font-bold tracking-wide text-white">
-                  {item.segment.toUpperCase()}
-                </span>
-              )}
-            </div>
-          </div>
           
-          {/* Property Type & Transaction Type */}
-          <div className="flex flex-wrap items-center gap-2 sm:gap-3 text-xs sm:text-sm">
+            {/* Property Type */}
             {item.type && (
-              <div className="rounded-md sm:rounded-lg border border-stone-200 bg-white px-2 py-1 sm:px-3 sm:py-1.5 font-medium text-slate-700">
+              <div className="inline-flex min-h-9 w-fit max-w-full items-center rounded-md border border-stone-200 bg-white px-3 text-xs font-semibold text-slate-700 shadow-sm sm:text-sm">
                 🏢 {item.type}
-              </div>
-            )}
-            {item.transactionType && (
-              <div className="rounded-md sm:rounded-lg border border-stone-200 bg-white px-2 py-1 sm:px-3 sm:py-1.5 font-medium text-slate-700">
-                {item.transactionType === 'sell' && '🏷️ Sell'}
-                {item.transactionType === 'rent' && '🔑 Rent'}
-                {item.transactionType === 'buy' && '💳 Buy'}
-                {item.transactionType === 'selfRent' && '🏠 Self Rent'}
               </div>
             )}
           </div>
         </div>
 
         {/* Main Content */}
-        <div className="flex-1 px-3 py-4 sm:px-6 sm:py-6">
+        <div className="flex-1 px-4 py-4 sm:px-5 sm:py-5">
           
           {/* Configuration Section */}
           {(item.configuration?.bedrooms || item.configuration?.bathrooms) && (
-            <div className="mb-4 sm:mb-6">
-              <div className="grid grid-cols-2 gap-2 sm:gap-3">
+            <div className="mb-4">
+              <div className="grid grid-cols-2 gap-2.5">
                 {item.configuration?.bedrooms !== null && item.configuration?.bedrooms !== undefined && (
-                  <div className="rounded-xl sm:rounded-2xl border border-slate-100 sm:border-slate-200/80 bg-slate-50/50 sm:bg-slate-50 p-2 sm:p-4 text-center">
-                    <p className="text-xl sm:text-3xl font-bold sm:font-semibold text-[#2157f2]">🛏️ {item.configuration.bedrooms}</p>
-                    <p className="text-[10px] sm:text-xs uppercase sm:capitalize sm:mt-1 text-slate-500">Bedrooms</p>
+                  <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-3 text-center">
+                    <p className="text-xl font-bold text-[#2157f2] sm:text-2xl">🛏️ {item.configuration.bedrooms}</p>
+                    <p className="mt-1 text-[10px] font-medium uppercase text-slate-500 sm:text-xs">Bedrooms</p>
                   </div>
                 )}
                 {item.configuration?.bathrooms !== null && item.configuration?.bathrooms !== undefined && (
-                  <div className="rounded-xl sm:rounded-2xl border border-violet-100 sm:border-violet-200/80 bg-violet-50/50 sm:bg-violet-50 p-2 sm:p-4 text-center">
-                    <p className="text-xl sm:text-3xl font-bold sm:font-semibold text-[#6d28d9]">🛁 {item.configuration.bathrooms}</p>
-                    <p className="text-[10px] sm:text-xs uppercase sm:capitalize sm:mt-1 text-slate-500">Bathrooms</p>
+                  <div className="rounded-lg border border-violet-200 bg-violet-50 px-3 py-3 text-center">
+                    <p className="text-xl font-bold text-[#6d28d9] sm:text-2xl">🛁 {item.configuration.bathrooms}</p>
+                    <p className="mt-1 text-[10px] font-medium uppercase text-slate-500 sm:text-xs">Bathrooms</p>
                   </div>
                 )}
               </div>
@@ -100,28 +98,28 @@ export default function PropertyCard({ item }: { item: PropertyItem }) {
 
           {/* Area Section */}
           {(item.area?.superBuiltup || item.area?.carpet || item.area?.plot) && (
-            <div className="mb-4 sm:mb-6">
-              <div className="flex flex-col gap-1.5 sm:space-y-2">
+            <div className="mb-4">
+              <div className="flex flex-col gap-2">
                 {item.area?.superBuiltup && (
-                  <div className="flex items-center justify-between rounded-lg sm:rounded-2xl border border-stone-100 sm:border-stone-200/80 bg-stone-50 px-3 py-2 sm:px-4 sm:py-3">
-                    <span className="text-xs sm:text-sm text-slate-600 flex items-center gap-1.5 sm:gap-2">📏 Super Built-up</span>
-                    <span className="text-xs sm:text-sm font-bold sm:font-semibold text-slate-900">
+                  <div className="flex min-h-11 items-center justify-between gap-3 rounded-lg border border-stone-200 bg-stone-50 px-3 py-2">
+                    <span className="flex items-center gap-2 text-xs text-slate-600 sm:text-sm">📏 Super Built-up</span>
+                    <span className="shrink-0 text-right text-xs font-bold text-slate-900 sm:text-sm">
                       {item.area.superBuiltup.toLocaleString()} {item.area?.unit || 'sqft'}
                     </span>
                   </div>
                 )}
                 {item.area?.carpet && (
-                  <div className="flex items-center justify-between rounded-lg sm:rounded-2xl border border-stone-100 sm:border-stone-200/80 bg-stone-50 px-3 py-2 sm:px-4 sm:py-3">
-                    <span className="text-xs sm:text-sm text-slate-600 flex items-center gap-1.5 sm:gap-2">📐 Carpet Area</span>
-                    <span className="text-xs sm:text-sm font-bold sm:font-semibold text-slate-900">
+                  <div className="flex min-h-11 items-center justify-between gap-3 rounded-lg border border-stone-200 bg-stone-50 px-3 py-2">
+                    <span className="flex items-center gap-2 text-xs text-slate-600 sm:text-sm">📐 Carpet Area</span>
+                    <span className="shrink-0 text-right text-xs font-bold text-slate-900 sm:text-sm">
                       {item.area.carpet.toLocaleString()} {item.area?.unit || 'sqft'}
                     </span>
                   </div>
                 )}
                 {item.area?.plot && (
-                  <div className="flex items-center justify-between rounded-lg sm:rounded-2xl border border-stone-100 sm:border-stone-200/80 bg-stone-50 px-3 py-2 sm:px-4 sm:py-3">
-                    <span className="text-xs sm:text-sm text-slate-600 flex items-center gap-1.5 sm:gap-2">🗺️ Plot Area</span>
-                    <span className="text-xs sm:text-sm font-bold sm:font-semibold text-slate-900">
+                  <div className="flex min-h-11 items-center justify-between gap-3 rounded-lg border border-stone-200 bg-stone-50 px-3 py-2">
+                    <span className="flex items-center gap-2 text-xs text-slate-600 sm:text-sm">🗺️ Plot Area</span>
+                    <span className="shrink-0 text-right text-xs font-bold text-slate-900 sm:text-sm">
                       {item.area.plot.toLocaleString()} {item.area?.unit || 'sqft'}
                     </span>
                   </div>
@@ -132,24 +130,24 @@ export default function PropertyCard({ item }: { item: PropertyItem }) {
 
           {/* Financial Details */}
           {(item.financial?.rent || item.financial?.maintenance || item.financial?.bookingAmount) && (
-            <div className="mb-4 sm:mb-6">
-              <div className="space-y-1.5 sm:space-y-2">
+            <div className="mb-4">
+              <div className="space-y-2">
                 {item.financial?.rent && (
-                  <div className="flex items-center justify-between rounded-lg sm:rounded-2xl bg-orange-50/70 sm:bg-orange-50 px-3 py-2 sm:px-4 sm:py-3">
-                    <span className="text-xs sm:text-sm text-slate-600">Monthly Rent</span>
-                    <span className="text-xs sm:text-sm sm:font-semibold font-bold text-orange-600">{formatCurrency(item.financial.rent)}</span>
+                  <div className="flex min-h-11 items-center justify-between gap-3 rounded-lg border border-orange-100 bg-orange-50 px-3 py-2">
+                    <span className="text-xs text-slate-600 sm:text-sm">Monthly Rent</span>
+                    <span className="shrink-0 text-right text-xs font-bold text-orange-600 sm:text-sm">{formatCurrency(item.financial.rent)}</span>
                   </div>
                 )}
                 {item.financial?.maintenance && (
-                  <div className="flex items-center justify-between rounded-lg sm:rounded-2xl bg-orange-50/70 sm:bg-orange-50 px-3 py-2 sm:px-4 sm:py-3">
-                    <span className="text-xs sm:text-sm text-slate-600">Maintenance</span>
-                    <span className="text-xs sm:text-sm sm:font-semibold font-bold text-orange-600">{formatCurrency(item.financial.maintenance)}</span>
+                  <div className="flex min-h-11 items-center justify-between gap-3 rounded-lg border border-orange-100 bg-orange-50 px-3 py-2">
+                    <span className="text-xs text-slate-600 sm:text-sm">Maintenance</span>
+                    <span className="shrink-0 text-right text-xs font-bold text-orange-600 sm:text-sm">{formatCurrency(item.financial.maintenance)}</span>
                   </div>
                 )}
                 {item.financial?.bookingAmount && (
-                  <div className="flex items-center justify-between rounded-lg sm:rounded-2xl bg-orange-50/70 sm:bg-orange-50 px-3 py-2 sm:px-4 sm:py-3">
-                    <span className="text-xs sm:text-sm text-slate-600">Booking Amount</span>
-                    <span className="text-xs sm:text-sm sm:font-semibold font-bold text-orange-600">{formatCurrency(item.financial.bookingAmount)}</span>
+                  <div className="flex min-h-11 items-center justify-between gap-3 rounded-lg border border-orange-100 bg-orange-50 px-3 py-2">
+                    <span className="text-xs text-slate-600 sm:text-sm">Booking Amount</span>
+                    <span className="shrink-0 text-right text-xs font-bold text-orange-600 sm:text-sm">{formatCurrency(item.financial.bookingAmount)}</span>
                   </div>
                 )}
               </div>
@@ -158,33 +156,33 @@ export default function PropertyCard({ item }: { item: PropertyItem }) {
 
           {/* Building Details */}
           {(item.building?.totalFloors || item.building?.propertyAge || item.building?.facing || item.building?.roadWidth || item.building?.furnishing) && (
-            <div className="mb-4 sm:mb-6">
-              <h3 className="text-[10px] sm:text-xs font-bold text-slate-400 sm:text-gray-700 uppercase tracking-wider mb-2 sm:mb-3">
+            <div className="mb-4">
+              <h3 className="mb-2 text-[10px] font-bold uppercase text-slate-500 sm:text-xs">
                 Building Details
               </h3>
-              <div className="space-y-0.5 sm:space-y-1.5">
+              <div className="divide-y divide-stone-100 rounded-lg border border-stone-200 bg-white px-3">
                 {item.building?.totalFloors && (
-                  <div className="flex justify-between items-center py-1 sm:py-1.5">
-                    <span className="text-xs sm:text-sm text-slate-500 sm:text-slate-600">Total Floors</span>
-                    <span className="text-xs sm:text-sm sm:font-semibold font-bold text-slate-800 sm:text-slate-900">{item.building.totalFloors}</span>
+                  <div className="flex min-h-9 items-center justify-between gap-3 py-1.5">
+                    <span className="text-xs text-slate-600 sm:text-sm">Total Floors</span>
+                    <span className="text-right text-xs font-bold text-slate-900 sm:text-sm">{item.building.totalFloors}</span>
                   </div>
                 )}
                 {item.address?.floor && (
-                  <div className="flex justify-between items-center py-1">
-                    <span className="text-xs text-slate-500">Floor Number</span>
-                    <span className="text-xs font-bold text-slate-800">{item.address.floor}</span>
+                  <div className="flex min-h-9 items-center justify-between gap-3 py-1.5">
+                    <span className="text-xs text-slate-600 sm:text-sm">Floor Number</span>
+                    <span className="text-right text-xs font-bold text-slate-900 sm:text-sm">{item.address.floor}</span>
                   </div>
                 )}
                 {item.building?.propertyAge && (
-                  <div className="flex justify-between items-center py-1">
-                    <span className="text-xs text-slate-500">Property Age</span>
-                    <span className="text-xs font-bold text-slate-800">{item.building.propertyAge} years</span>
+                  <div className="flex min-h-9 items-center justify-between gap-3 py-1.5">
+                    <span className="text-xs text-slate-600 sm:text-sm">Property Age</span>
+                    <span className="text-right text-xs font-bold text-slate-900 sm:text-sm">{item.building.propertyAge} years</span>
                   </div>
                 )}
                 {item.building?.facing && (
-                  <div className="flex justify-between items-center py-1">
-                    <span className="text-xs text-slate-500">Facing</span>
-                    <span className="text-xs font-bold text-slate-800 capitalize">{item.building.facing}</span>
+                  <div className="flex min-h-9 items-center justify-between gap-3 py-1.5">
+                    <span className="text-xs text-slate-600 sm:text-sm">Facing</span>
+                    <span className="text-right text-xs font-bold capitalize text-slate-900 sm:text-sm">{item.building.facing}</span>
                   </div>
                 )}
               </div>
@@ -193,17 +191,17 @@ export default function PropertyCard({ item }: { item: PropertyItem }) {
 
           {/* Amenities & Features */}
           {(item.amenities || item.condition || item.plotDetails) && (
-            <div className="mb-2 sm:mb-5">
-              <h3 className="text-[10px] sm:text-xs font-bold text-slate-400 sm:text-gray-700 uppercase tracking-wider mb-2 mt-2 sm:mt-0 sm:mb-3">
+            <div>
+              <h3 className="mb-2 text-[10px] font-bold uppercase text-slate-500 sm:text-xs">
                 Features & Amenities
               </h3>
               <div className="flex flex-wrap gap-1.5 sm:gap-2">
-                {item.amenities?.lift && <span className="px-2 py-0.5 sm:px-3 sm:py-1 bg-emerald-50 sm:bg-emerald-100 text-emerald-700 border sm:border-0 border-emerald-100 text-[10px] sm:text-xs font-bold sm:font-semibold rounded-md sm:rounded-full">🛗 Lift</span>}
-                {item.amenities?.parking && <span className="px-2 py-0.5 sm:px-3 sm:py-1 bg-emerald-50 sm:bg-emerald-100 text-emerald-700 border sm:border-0 border-emerald-100 text-[10px] sm:text-xs font-bold sm:font-semibold rounded-md sm:rounded-full">🅿️ Parking</span>}
-                {item.amenities?.gated && <span className="px-2 py-0.5 sm:px-3 sm:py-1 bg-emerald-50 sm:bg-emerald-100 text-emerald-700 border sm:border-0 border-emerald-100 text-[10px] sm:text-xs font-bold sm:font-semibold rounded-md sm:rounded-full">🚪 Gated</span>}
-                {item.amenities?.corner && <span className="px-2 py-0.5 sm:px-3 sm:py-1 bg-emerald-50 sm:bg-emerald-100 text-emerald-700 border sm:border-0 border-emerald-100 text-[10px] sm:text-xs font-bold sm:font-semibold rounded-md sm:rounded-full">📐 Corner</span>}
-                {item.condition?.renovated && <span className="px-2 py-0.5 sm:px-3 sm:py-1 bg-blue-50 sm:bg-blue-100 text-blue-700 border sm:border-0 border-blue-100 text-[10px] sm:text-xs font-bold sm:font-semibold rounded-md sm:rounded-full">✨ Renovated</span>}
-                {item.condition?.newlyBuilt && <span className="px-2 py-0.5 sm:px-3 sm:py-1 bg-blue-50 sm:bg-blue-100 text-blue-700 border sm:border-0 border-blue-100 text-[10px] sm:text-xs font-bold sm:font-semibold rounded-md sm:rounded-full">🆕 Newly Built</span>}
+                {item.amenities?.lift && <span className="rounded-md border border-emerald-100 bg-emerald-50 px-2 py-1 text-[10px] font-bold text-emerald-700 sm:text-xs">🛗 Lift</span>}
+                {item.amenities?.parking && <span className="rounded-md border border-emerald-100 bg-emerald-50 px-2 py-1 text-[10px] font-bold text-emerald-700 sm:text-xs">🅿️ Parking</span>}
+                {item.amenities?.gated && <span className="rounded-md border border-emerald-100 bg-emerald-50 px-2 py-1 text-[10px] font-bold text-emerald-700 sm:text-xs">🚪 Gated</span>}
+                {item.amenities?.corner && <span className="rounded-md border border-emerald-100 bg-emerald-50 px-2 py-1 text-[10px] font-bold text-emerald-700 sm:text-xs">📐 Corner</span>}
+                {item.condition?.renovated && <span className="rounded-md border border-blue-100 bg-blue-50 px-2 py-1 text-[10px] font-bold text-blue-700 sm:text-xs">✨ Renovated</span>}
+                {item.condition?.newlyBuilt && <span className="rounded-md border border-blue-100 bg-blue-50 px-2 py-1 text-[10px] font-bold text-blue-700 sm:text-xs">🆕 Newly Built</span>}
               </div>
             </div>
           )}
@@ -211,50 +209,52 @@ export default function PropertyCard({ item }: { item: PropertyItem }) {
         </div>
 
         {/* Broker/Source Information Footer */}
-        <div className="mt-auto border-t border-stone-100 bg-stone-50/30 px-3 py-3 sm:px-6 sm:py-4 flex flex-col gap-2 sm:gap-3">
-          <div className="flex items-center justify-between">
+        <div className="mt-auto flex flex-col gap-3 border-t border-stone-100 bg-stone-50/60 px-4 py-3 sm:px-5 sm:py-4">
+          <div className="flex min-h-10 items-center justify-between gap-3">
             {item.sourceMeta?.brokerName ? (
-              <div>
-                <p className="mb-0.5 text-[9px] font-semibold uppercase tracking-wider text-slate-400">Broker</p>
-                <p className="text-xs font-bold text-slate-800 line-clamp-1">{item.sourceMeta.brokerName}</p>
+              <div className="min-w-0">
+                <p className="mb-0.5 text-[9px] font-semibold uppercase text-slate-400">Broker</p>
+                <p className="truncate text-xs font-bold text-slate-800">{item.sourceMeta.brokerName}</p>
               </div>
             ) : <div/>}
 
             {phoneNumber && (
               <button
                 onClick={() => setIsModalOpen(true)}
-                className="rounded-lg sm:rounded-xl bg-[#14202d] px-3 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm font-bold sm:font-semibold text-white shadow-sm transition hover:bg-[#1d2d40] active:scale-95 sm:hover:-translate-y-0.5 flex items-center gap-1.5 sm:gap-2"
+                className="inline-flex h-10 shrink-0 items-center justify-center gap-2 rounded-md bg-[#14202d] px-3 text-xs font-bold text-white shadow-sm transition hover:bg-[#1d2d40] active:scale-95 sm:px-4 sm:text-sm"
               >
                 📞 Contact
               </button>
             )}
-          </div>
-          <div className="text-center pt-1.5 border-t border-stone-200/50 w-full mt-1">
-            <span className="text-[9px] font-semibold uppercase tracking-widest text-slate-400">Powered by Terragi</span>
           </div>
         </div>
       </div>
 
       {/* Contact Modal */}
       <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title="Contact Actions">
-        <div className="flex flex-col gap-4 mt-4">
-          <div className="rounded-2xl bg-stone-50 p-4 text-center border border-stone-200">
-            <p className="text-sm text-stone-500 mb-1">Phone Number</p>
-            <p className="text-lg font-bold text-slate-900">{phoneNumber}</p>
+        <div className="mt-4 flex flex-col gap-4">
+          <div className="flex min-h-16 items-center justify-center gap-3 rounded-lg border border-stone-200 bg-stone-50 p-4 text-center">
+            {contactName && (
+              <>
+                <span className="min-w-0 truncate text-lg font-bold text-slate-900">{contactName}</span>
+                <span className="h-5 w-px shrink-0 bg-stone-300" aria-hidden="true" />
+              </>
+            )}
+            <span className="shrink-0 text-lg font-bold text-slate-900">{phoneNumber}</span>
           </div>
           
           <div className="grid grid-cols-2 gap-3">
             <a
               href={`tel:${phoneNumber}`}
-              className="flex items-center justify-center gap-2 rounded-xl bg-[#2157f2] px-4 py-3 text-sm font-semibold text-white transition hover:-translate-y-0.5 hover:shadow-[0_8px_20px_rgba(33,87,242,0.3)]"
+              className="flex min-h-11 items-center justify-center gap-2 rounded-md bg-[#2157f2] px-4 py-3 text-sm font-semibold text-white transition hover:-translate-y-0.5 hover:shadow-[0_8px_20px_rgba(33,87,242,0.3)]"
             >
               📞 Call Now
             </a>
             <a
-              href={`https://wa.me/${phoneNumber.replace(/\\D/g, '')}`}
+              href={`https://wa.me/${whatsappNumber}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center justify-center gap-2 rounded-xl bg-[#25D366] px-4 py-3 text-sm font-semibold text-white transition hover:-translate-y-0.5 hover:shadow-[0_8px_20px_rgba(37,211,102,0.3)]"
+              className="flex min-h-11 items-center justify-center gap-2 rounded-md bg-[#25D366] px-4 py-3 text-sm font-semibold text-white transition hover:-translate-y-0.5 hover:shadow-[0_8px_20px_rgba(37,211,102,0.3)]"
             >
               💬 WhatsApp
             </a>

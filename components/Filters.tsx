@@ -86,16 +86,23 @@ export default function Filters({ filters, searchQueries, data, applyFilters, cl
   };
 
   const selectClass =
-    "h-[52px] w-full rounded-[18px] border border-stone-300/80 bg-white px-4 text-[15px] text-slate-900 shadow-[0_10px_24px_rgba(15,23,42,0.04)] outline-none transition placeholder:text-stone-400 focus:border-[#14202d] focus:ring-4 focus:ring-slate-900/10";
+    "h-12 w-full rounded-lg border border-stone-200 bg-white px-4 text-sm font-medium text-slate-900 shadow-[0_8px_24px_rgba(15,23,42,0.05)] outline-none transition focus:border-[#14202d] focus:ring-4 focus:ring-slate-900/10 sm:h-[52px] sm:text-[15px]";
+  const segmentGroupClass =
+    "grid grid-cols-3 gap-1 rounded-lg border border-stone-200 bg-stone-50/80 p-1 shadow-[0_8px_24px_rgba(15,23,42,0.05)]";
+  const segmentButtonClass =
+    "min-h-10 rounded-md px-2 py-2 text-[12px] font-bold leading-4 transition sm:min-h-11 sm:px-3 sm:text-sm";
+  const activeSegmentClass = "bg-[#14202d] text-white shadow-[0_8px_18px_rgba(20,32,45,0.2)]";
+  const inactiveSegmentClass = "text-slate-600 hover:bg-white hover:text-slate-900";
+
   return (
-    <div className="flex flex-col gap-5">
+    <div className="flex flex-col gap-4 sm:gap-5">
       <div className="grid gap-3 lg:grid-cols-2">
-        <div className="grid grid-cols-3 rounded-[18px] border border-stone-300/80 bg-white p-1 shadow-sm sm:shadow-[0_10px_24px_rgba(15,23,42,0.04)]">
+        <div className={segmentGroupClass}>
           <button
             type="button"
             onClick={() => setField("transactionType", "")}
-            className={`min-h-11 rounded-[14px] px-3 py-2 text-sm font-semibold transition ${
-              draft.transactionType === "" ? "bg-[#14202d] text-white" : "text-slate-600 hover:bg-stone-100"
+            className={`${segmentButtonClass} ${
+              draft.transactionType === "" ? activeSegmentClass : inactiveSegmentClass
             }`}
           >
             Any
@@ -103,8 +110,8 @@ export default function Filters({ filters, searchQueries, data, applyFilters, cl
           <button
             type="button"
             onClick={() => setField("transactionType", "sell")}
-            className={`min-h-11 rounded-[14px] px-3 py-2 text-sm font-semibold transition ${
-              draft.transactionType === "sell" ? "bg-[#14202d] text-white" : "text-slate-600 hover:bg-stone-100"
+            className={`${segmentButtonClass} ${
+              draft.transactionType === "sell" ? activeSegmentClass : inactiveSegmentClass
             }`}
           >
             Sell
@@ -112,20 +119,20 @@ export default function Filters({ filters, searchQueries, data, applyFilters, cl
           <button
             type="button"
             onClick={() => setField("transactionType", "rent")}
-            className={`min-h-11 rounded-[14px] px-3 py-2 text-sm font-semibold transition ${
-              draft.transactionType === "rent" ? "bg-[#14202d] text-white" : "text-slate-600 hover:bg-stone-100"
+            className={`${segmentButtonClass} ${
+              draft.transactionType === "rent" ? activeSegmentClass : inactiveSegmentClass
             }`}
           >
             Rent
           </button>
         </div>
 
-        <div className="grid grid-cols-3 rounded-[18px] border border-stone-300/80 bg-white p-1 shadow-sm sm:shadow-[0_10px_24px_rgba(15,23,42,0.04)]">
+        <div className={segmentGroupClass}>
           <button
             type="button"
             onClick={() => setField("segment", "")}
-            className={`min-h-11 rounded-[14px] px-3 py-2 text-sm font-semibold transition ${
-              draft.segment === "" ? "bg-[#14202d] text-white" : "text-slate-600 hover:bg-stone-100"
+            className={`${segmentButtonClass} ${
+              draft.segment === "" ? activeSegmentClass : inactiveSegmentClass
             }`}
           >
             All
@@ -133,8 +140,8 @@ export default function Filters({ filters, searchQueries, data, applyFilters, cl
           <button
             type="button"
             onClick={() => setField("segment", "residential")}
-            className={`min-h-11 rounded-[14px] px-3 py-2 text-sm font-semibold transition ${
-              draft.segment === "residential" ? "bg-[#14202d] text-white" : "text-slate-600 hover:bg-stone-100"
+            className={`${segmentButtonClass} ${
+              draft.segment === "residential" ? activeSegmentClass : inactiveSegmentClass
             }`}
           >
             Residential
@@ -142,8 +149,8 @@ export default function Filters({ filters, searchQueries, data, applyFilters, cl
           <button
             type="button"
             onClick={() => setField("segment", "commercial")}
-            className={`min-h-11 rounded-[14px] px-3 py-2 text-sm font-semibold transition ${
-              draft.segment === "commercial" ? "bg-[#14202d] text-white" : "text-slate-600 hover:bg-stone-100"
+            className={`${segmentButtonClass} ${
+              draft.segment === "commercial" ? activeSegmentClass : inactiveSegmentClass
             }`}
           >
             Commercial
@@ -153,7 +160,7 @@ export default function Filters({ filters, searchQueries, data, applyFilters, cl
 
       <SearchBar queries={draftSearchQueries} onChange={setDraftSearchQueries} data={data} />
 
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5">
         <select
           value={draft.plotArea}
           onChange={(e) => setField("plotArea", e.target.value)}
@@ -196,7 +203,7 @@ export default function Filters({ filters, searchQueries, data, applyFilters, cl
           <button
             type="button"
             onClick={handleApply}
-            className="h-[52px] rounded-[18px] bg-[#14202d] px-5 text-sm font-semibold text-white shadow-[0_14px_30px_rgba(20,32,45,0.22)] transition hover:-translate-y-0.5 hover:bg-[#1b3045] focus:outline-none focus:ring-4 focus:ring-slate-900/10 active:translate-y-0"
+            className="h-12 rounded-lg bg-[#14202d] px-5 text-sm font-bold text-white shadow-[0_14px_30px_rgba(20,32,45,0.22)] transition hover:-translate-y-0.5 hover:bg-[#1b3045] focus:outline-none focus:ring-4 focus:ring-slate-900/10 active:translate-y-0 sm:h-[52px]"
           >
             Apply
           </button>
@@ -204,7 +211,7 @@ export default function Filters({ filters, searchQueries, data, applyFilters, cl
           <button
             type="button"
             onClick={handleClear}
-            className="h-[52px] rounded-[18px] border border-stone-300 bg-stone-50 px-5 text-sm font-semibold text-slate-700 transition hover:bg-stone-100 focus:outline-none focus:ring-4 focus:ring-slate-900/10"
+            className="h-12 rounded-lg border border-stone-300 bg-white px-5 text-sm font-bold text-slate-700 shadow-[0_8px_24px_rgba(15,23,42,0.04)] transition hover:bg-stone-100 focus:outline-none focus:ring-4 focus:ring-slate-900/10 sm:h-[52px]"
           >
             Clear
           </button>
