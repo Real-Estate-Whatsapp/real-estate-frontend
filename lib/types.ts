@@ -46,10 +46,12 @@ export type PropertyItem = {
   };
   plotDetails?: Record<string, unknown>;
   sourceMeta?: {
+    name?: string;
     brokerName?: string;
     phone?: string;
   };
   contact?: {
+    name?: string;
     phone?: string;
   };
 };
