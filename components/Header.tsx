@@ -21,8 +21,8 @@ export default function Header({ activeFilterCount, onOpenSearch }: HeaderProps)
             unoptimized
             className="h-auto w-[112px] shrink-0 object-contain sm:w-[140px]"
           />
-          <div className="hidden h-8 w-px bg-stone-300 sm:block" />
-          <p className="hidden max-w-[280px] text-sm font-medium leading-5 text-slate-500 sm:block">
+          <div className="h-8 w-px bg-stone-300" />
+          <p className="whitespace-nowrap text-xs font-medium leading-5 text-slate-500 sm:text-sm">
             WhatsApp messages, ab smart search mein.
           </p>
         </div>
