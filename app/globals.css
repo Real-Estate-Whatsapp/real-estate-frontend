@@ -1,13 +1,15 @@
 @import "tailwindcss";
 
 :root {
-  --background: #f6f2ea;
-  --foreground: #1f2937;
-  --surface: #fffdf9;
-  --surface-strong: #ffffff;
-  --ink-muted: #667085;
-  --line-soft: rgba(148, 163, 184, 0.18);
-  --shadow-soft: 0 20px 50px rgba(15, 23, 42, 0.08);
+  --background: #07111F;
+  --foreground: #FFFFFF;
+  --surface: #132238;
+  --surface-alt: #1C3350;
+  --surface-deep: #0D1B2D;
+  --border: #22354F;
+  --text-secondary: #A9B4C2;
+  --accent: #3B82F6;
+  --danger: #EF4444;
 }
 
 @theme inline {
@@ -19,15 +21,15 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --background: #07111F;
+    --foreground: #FFFFFF;
   }
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Georgia, "Times New Roman", serif;
+  font-family: var(--font-geist-sans), system-ui, -apple-system, sans-serif;
 }
 
 * {
@@ -35,6 +37,6 @@ body {
 }
 
 ::selection {
-  background: rgba(15, 118, 110, 0.18);
-  color: #111827;
+  background: rgba(59, 130, 246, 0.2);
+  color: #ffffff;
 }
