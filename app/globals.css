@@ -36,6 +36,30 @@ body {
   box-sizing: border-box;
 }
 
+/* ── Skeleton shimmer ─────────────────────────────────────────── */
+@keyframes shimmer {
+  from { background-position: 200% center; }
+  to   { background-position: -200% center; }
+}
+
+.sk {
+  background: linear-gradient(
+    90deg,
+    #132238 25%,
+    #1C3350 50%,
+    #132238 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sk {
+    animation: none;
+    background: #132238;
+  }
+}
+
 ::selection {
   background: rgba(59, 130, 246, 0.2);
   color: #ffffff;

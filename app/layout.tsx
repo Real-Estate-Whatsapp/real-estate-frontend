@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
-import DesktopBanner from "../components/DesktopBanner";
+import MobileGate from "../components/MobileGate";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -29,12 +29,7 @@ export default function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
-        {/* Desktop gate — shown only on lg+ (1024px+) */}
-        <div className="hidden lg:block">
-          <DesktopBanner />
-        </div>
-        {/* App — shown on mobile and tablet only */}
-        <div className="lg:hidden">{children}</div>
+        <MobileGate>{children}</MobileGate>
       </body>
     </html>
   );
