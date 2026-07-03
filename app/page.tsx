@@ -1,9 +1,10 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
+import { useRouter } from "next/navigation";
 import api from "../lib/api";
 import PropertyCard from "../components/PropertyCard";
-import Loader from "../components/Loader";
+import PageSkeleton from "../components/skeletons/PageSkeleton";
 import Header from "../components/Header";
 import HeroSearchBar from "../components/HeroSearchBar";
 import SearchModal from "../components/SearchModal";
@@ -37,6 +38,14 @@ function snapFavRaw(): string {
 }
 const ssrViewMode = () => "list" as ViewMode;
 const ssrFavRaw = () => "[]";
+
+const API_BASE = (process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000") + "/api";
+function getToken(): string {
+  try { return localStorage.getItem("token") ?? ""; } catch { return ""; }
+}
+function clearToken(): void {
+  try { localStorage.removeItem("token"); } catch { /* ignore */ }
+}
 
 type FilterState = {
   type: string;
@@ -178,6 +187,9 @@ const matchesPlotAreaFilter = (item: PropertyItem, plotAreaFilter: string) => {
 };
 
 export default function Home() {
+  const router = useRouter();
+  const [authReady, setAuthReady] = useState(false);
+
   const [data, setData] = useState<PropertyItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
@@ -404,21 +416,6 @@ export default function Home() {
     setPage(1);
   }, []);
 
-  const activeFilterCount = useMemo(() => {
-    return [
-      searchQueries.locality,
-      searchQueries.society,
-      searchQueries.phone,
-      filters.type,
-      filters.segment,
-      filters.locality,
-      filters.bedrooms,
-      filters.minPrice,
-      filters.maxPrice,
-      filters.plotArea,
-      filters.transactionType,
-    ].filter(Boolean).length;
-  }, [filters, searchQueries]);
 
   const handleViewMode = useCallback((mode: ViewMode) => {
     try {
@@ -432,20 +429,113 @@ export default function Home() {
       const raw = localStorage.getItem("prop_favorites");
       const current: string[] = raw ? (JSON.parse(raw) as string[]) : [];
       const next = new Set(current);
-      if (next.has(id)) next.delete(id); else next.add(id);
+      const isAdding = !next.has(id);
+      if (isAdding) next.add(id); else next.delete(id);
       localStorage.setItem("prop_favorites", JSON.stringify([...next]));
       window.dispatchEvent(new Event("storage"));
+
+      const token = getToken();
+      if (!token) return;
+
+      // Revert the optimistic localStorage update if the DB call fails
+      const revert = () => {
+        try {
+          const cur = localStorage.getItem("prop_favorites");
+          const list: string[] = cur ? (JSON.parse(cur) as string[]) : [];
+          const rev = new Set(list);
+          if (isAdding) rev.delete(id); else rev.add(id);
+          localStorage.setItem("prop_favorites", JSON.stringify([...rev]));
+          window.dispatchEvent(new Event("storage"));
+        } catch {}
+      };
+
+      const url = isAdding ? `${API_BASE}/favorites` : `${API_BASE}/favorites/${id}`;
+      const opts: RequestInit = isAdding
+        ? { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` }, body: JSON.stringify({ propertyId: id }) }
+        : { method: "DELETE", headers: { Authorization: `Bearer ${token}` } };
+
+      fetch(url, opts)
+        .then((r) => {
+          if (!r.ok) {
+            revert();
+            if (r.status === 401) clearToken();
+          }
+        })
+        .catch(() => revert());
     } catch {}
   }, []);
+
+  // On mount (after auth), load favorites from DB and sync to localStorage
+  useEffect(() => {
+    if (!authReady) return;
+    const token = getToken();
+    if (!token) return;
+    fetch(`${API_BASE}/favorites`, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+      .then((r) => {
+        if (r.status === 401) {
+          // Token is stale or invalid — clear it so the user gets re-prompted on next login
+          clearToken();
+          return null;
+        }
+        if (!r.ok) return null;
+        return r.json() as Promise<unknown>;
+      })
+      .then((res: unknown) => {
+        if (!res) return;
+        let ids: string[] = [];
+        if (Array.isArray(res)) {
+          ids = (res as Array<unknown>).map((f) => {
+            if (typeof f === "string") return f;
+            const obj = f as Record<string, string>;
+            return obj.propertyId ?? obj._id ?? "";
+          }).filter(Boolean);
+        } else {
+          const obj = res as Record<string, unknown>;
+          if (Array.isArray(obj.favorites)) ids = obj.favorites as string[];
+        }
+        localStorage.setItem("prop_favorites", JSON.stringify(ids));
+        window.dispatchEvent(new Event("storage"));
+      })
+      .catch((e) => console.error("[Favorites] GET network error:", e));
+  }, [authReady]);
 
   const displayedData = useMemo(
     () => showFavoritesOnly ? data.filter((item) => item._id && favorites.has(item._id)) : data,
     [data, favorites, showFavoritesOnly]
   );
 
+  // Auth check — runs once on client mount, never during SSR.
+  // setState is inside a callback (not directly in the effect body) to satisfy react-hooks/set-state-in-effect.
+  useEffect(() => {
+    // On desktop (≥1024px) MobileGate shows the landing page — no auth redirect needed.
+    // Only enforce login on mobile/tablet where the app is actually visible.
+    if (window.innerWidth >= 1024) {
+      const id = setTimeout(() => setAuthReady(true), 0);
+      return () => clearTimeout(id);
+    }
+
+    const user = (() => { try { return localStorage.getItem("user"); } catch { return null; } })();
+    if (!user) {
+      router.replace("/register");
+      return;
+    }
+    const id = setTimeout(() => setAuthReady(true), 0);
+    return () => clearTimeout(id);
+  }, [router]);
+
+  if (!authReady) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-[#07111F]">
+        <div className="h-7 w-7 animate-spin rounded-full border-2 border-[#22354F] border-t-[#3B82F6]" />
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-[#07111F]">
-      <Header activeFilterCount={activeFilterCount} onOpenSearch={() => setIsSearchOpen(true)} />
+      <Header />
 
       <SearchModal
         isOpen={isSearchOpen}
@@ -533,7 +623,7 @@ export default function Home() {
 
         {/* Content */}
         {loading ? (
-          <Loader />
+          <PageSkeleton />
         ) : data.length === 0 ? (
           <div className="mt-6 rounded-2xl border border-dashed border-[#22354F] bg-[#132238] px-6 py-12 text-center">
             <p className="text-base font-semibold text-white">No results found</p>
