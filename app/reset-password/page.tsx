@@ -1,31 +1,35 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { Suspense, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 
 const API_BASE = (process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000") + "/api";
 
-type FormState = { email: string; password: string };
+type FormState = { password: string; confirmPassword: string };
 type FieldErrors = Partial<Record<keyof FormState, string>>;
 
 function validate(form: FormState): FieldErrors {
   const errors: FieldErrors = {};
-  if (!form.email.trim()) {
-    errors.email = "Email is required";
-  } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) {
-    errors.email = "Enter a valid email address";
-  }
   if (!form.password) {
     errors.password = "Password is required";
+  } else if (form.password.length < 6) {
+    errors.password = "Password must be at least 6 characters";
+  }
+  if (!form.confirmPassword) {
+    errors.confirmPassword = "Please confirm your password";
+  } else if (form.password && form.confirmPassword !== form.password) {
+    errors.confirmPassword = "Passwords do not match";
   }
   return errors;
 }
 
-export default function LoginPage() {
+function ResetPasswordForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const token = searchParams.get("token") ?? "";
 
-  const [form, setForm] = useState<FormState>({ email: "", password: "" });
+  const [form, setForm] = useState<FormState>({ password: "", confirmPassword: "" });
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const [serverError, setServerError] = useState("");
   const [success, setSuccess] = useState(false);
@@ -41,6 +45,11 @@ export default function LoginPage() {
     e.preventDefault();
     setServerError("");
 
+    if (!token) {
+      setServerError("This reset link is invalid. Please request a new one.");
+      return;
+    }
+
     const errors = validate(form);
     if (Object.keys(errors).length > 0) {
       setFieldErrors(errors);
@@ -49,26 +58,18 @@ export default function LoginPage() {
 
     setLoading(true);
     try {
-      const res = await fetch(`${API_BASE}/auth/login`, {
+      const res = await fetch(`${API_BASE}/auth/reset-password`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          email: form.email.trim(),
-          password: form.password,
-        }),
+        body: JSON.stringify({ token, newPassword: form.password }),
       });
-      const data = await res.json() as Record<string, unknown>;
+      const data: { message?: string } = await res.json();
 
-      if (res.status === 200) {
-        try {
-          localStorage.setItem("user", JSON.stringify(data.user));
-          const token = ([data.token, data.accessToken, data.access_token].find(v => typeof v === "string") ?? "") as string;
-          if (token) localStorage.setItem("token", token);
-        } catch {}
+      if (res.ok) {
         setSuccess(true);
-        setTimeout(() => router.push("/"), 1200);
+        setTimeout(() => router.push("/login"), 1500);
       } else {
-        setServerError((data.message as string | undefined) ?? "Login failed. Please try again.");
+        setServerError(data.message ?? "This reset link is invalid or has expired.");
       }
     } catch {
       setServerError("Network error. Please check your connection.");
@@ -84,8 +85,8 @@ export default function LoginPage() {
         {/* Brand */}
         <div className="mb-8 text-center">
           <p className="text-xs font-semibold uppercase tracking-widest text-[#3B82F6]">PropTally</p>
-          <h1 className="mt-1 text-2xl font-bold text-white">Welcome back</h1>
-          <p className="mt-1 text-sm text-[#A9B4C2]">Sign in to your account</p>
+          <h1 className="mt-1 text-2xl font-bold text-white">Reset password</h1>
+          <p className="mt-1 text-sm text-[#A9B4C2]">Choose a new password for your account</p>
         </div>
 
         {/* Card */}
@@ -99,8 +100,8 @@ export default function LoginPage() {
                   <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                 </svg>
               </div>
-              <p className="text-base font-semibold text-white">Login successful!</p>
-              <p className="mt-1 text-sm text-[#A9B4C2]">Redirecting…</p>
+              <p className="text-base font-semibold text-white">Password reset!</p>
+              <p className="mt-1 text-sm text-[#A9B4C2]">Redirecting to login…</p>
             </div>
           ) : (
             <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-4">
@@ -112,40 +113,15 @@ export default function LoginPage() {
                 </div>
               )}
 
-              {/* Email */}
+              {/* New password */}
               <div>
                 <label className="mb-1.5 block text-[11px] font-semibold uppercase tracking-widest text-[#A9B4C2]">
-                  Email
+                  New password
                 </label>
                 <input
-                  type="email"
-                  placeholder="you@example.com"
-                  autoComplete="email"
-                  value={form.email}
-                  onChange={setField("email")}
-                  className={`w-full rounded-xl border bg-[#0D1B2D] px-3.5 py-2.5 text-sm text-white caret-[#3B82F6] placeholder:text-[#A9B4C2]/40 outline-none transition-all focus:border-[#3B82F6]/60 focus:ring-2 focus:ring-[#3B82F6]/15 ${
-                    fieldErrors.email ? "border-[#EF4444]/50" : "border-[#22354F]"
-                  }`}
-                />
-                {fieldErrors.email && (
-                  <p className="mt-1 text-[11px] text-[#EF4444]">{fieldErrors.email}</p>
-                )}
-              </div>
-
-              {/* Password */}
-              <div>
-                <div className="mb-1.5 flex items-center justify-between">
-                  <label className="block text-[11px] font-semibold uppercase tracking-widest text-[#A9B4C2]">
-                    Password
-                  </label>
-                  <Link href="/forgot-password" className="text-[11px] font-semibold text-[#3B82F6] hover:underline">
-                    Forgot password?
-                  </Link>
-                </div>
-                <input
                   type="password"
-                  placeholder="Your password"
-                  autoComplete="current-password"
+                  placeholder="Min. 6 characters"
+                  autoComplete="new-password"
                   value={form.password}
                   onChange={setField("password")}
                   className={`w-full rounded-xl border bg-[#0D1B2D] px-3.5 py-2.5 text-sm text-white caret-[#3B82F6] placeholder:text-[#A9B4C2]/40 outline-none transition-all focus:border-[#3B82F6]/60 focus:ring-2 focus:ring-[#3B82F6]/15 ${
@@ -154,6 +130,26 @@ export default function LoginPage() {
                 />
                 {fieldErrors.password && (
                   <p className="mt-1 text-[11px] text-[#EF4444]">{fieldErrors.password}</p>
+                )}
+              </div>
+
+              {/* Confirm password */}
+              <div>
+                <label className="mb-1.5 block text-[11px] font-semibold uppercase tracking-widest text-[#A9B4C2]">
+                  Confirm password
+                </label>
+                <input
+                  type="password"
+                  placeholder="Re-enter password"
+                  autoComplete="new-password"
+                  value={form.confirmPassword}
+                  onChange={setField("confirmPassword")}
+                  className={`w-full rounded-xl border bg-[#0D1B2D] px-3.5 py-2.5 text-sm text-white caret-[#3B82F6] placeholder:text-[#A9B4C2]/40 outline-none transition-all focus:border-[#3B82F6]/60 focus:ring-2 focus:ring-[#3B82F6]/15 ${
+                    fieldErrors.confirmPassword ? "border-[#EF4444]/50" : "border-[#22354F]"
+                  }`}
+                />
+                {fieldErrors.confirmPassword && (
+                  <p className="mt-1 text-[11px] text-[#EF4444]">{fieldErrors.confirmPassword}</p>
                 )}
               </div>
 
@@ -169,7 +165,7 @@ export default function LoginPage() {
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
                   </svg>
                 ) : (
-                  "Sign In"
+                  "Reset password"
                 )}
               </button>
             </form>
@@ -178,12 +174,20 @@ export default function LoginPage() {
 
         {/* Footer link */}
         <p className="mt-5 text-center text-sm text-[#A9B4C2]">
-          Don&apos;t have an account?{" "}
-          <Link href="/register" className="font-semibold text-[#3B82F6] hover:underline">
-            Create one
+          Remembered your password?{" "}
+          <Link href="/login" className="font-semibold text-[#3B82F6] hover:underline">
+            Sign in
           </Link>
         </p>
       </div>
     </div>
+  );
+}
+
+export default function ResetPasswordPage() {
+  return (
+    <Suspense fallback={null}>
+      <ResetPasswordForm />
+    </Suspense>
   );
 }
