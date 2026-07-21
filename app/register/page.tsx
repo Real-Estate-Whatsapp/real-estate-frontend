@@ -6,7 +6,7 @@ import Link from "next/link";
 
 const API_BASE = (process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000") + "/api";
 
-type FormState = { name: string; email: string; password: string };
+type FormState = { name: string; email: string; password: string; phone: string };
 type FieldErrors = Partial<Record<keyof FormState, string>>;
 
 function validate(form: FormState): FieldErrors {
@@ -16,6 +16,11 @@ function validate(form: FormState): FieldErrors {
     errors.email = "Email is required";
   } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) {
     errors.email = "Enter a valid email address";
+  }
+  if (!form.phone.trim()) {
+    errors.phone = "Mobile number is required";
+  } else if (!/^[6-9]\d{9}$/.test(form.phone.trim())) {
+    errors.phone = "Enter a valid 10-digit mobile number";
   }
   if (!form.password) {
     errors.password = "Password is required";
@@ -28,7 +33,7 @@ function validate(form: FormState): FieldErrors {
 export default function RegisterPage() {
   const router = useRouter();
 
-  const [form, setForm] = useState<FormState>({ name: "", email: "", password: "" });
+  const [form, setForm] = useState<FormState>({ name: "", email: "", password: "", phone: "" });
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const [serverError, setServerError] = useState("");
   const [success, setSuccess] = useState(false);
@@ -59,6 +64,7 @@ export default function RegisterPage() {
           name: form.name.trim(),
           email: form.email.trim(),
           password: form.password,
+          phone: form.phone.trim(),
         }),
       });
       const data: { message?: string } = await res.json();
@@ -148,6 +154,26 @@ export default function RegisterPage() {
                 />
                 {fieldErrors.email && (
                   <p className="mt-1 text-[11px] text-[#EF4444]">{fieldErrors.email}</p>
+                )}
+              </div>
+
+              {/* Mobile Number */}
+              <div>
+                <label className="mb-1.5 block text-[11px] font-semibold uppercase tracking-widest text-[#A9B4C2]">
+                  Mobile Number
+                </label>
+                <input
+                  type="tel"
+                  placeholder="98765 43210"
+                  autoComplete="tel"
+                  value={form.phone}
+                  onChange={setField("phone")}
+                  className={`w-full rounded-xl border bg-[#0D1B2D] px-3.5 py-2.5 text-sm text-white caret-[#3B82F6] placeholder:text-[#A9B4C2]/40 outline-none transition-all focus:border-[#3B82F6]/60 focus:ring-2 focus:ring-[#3B82F6]/15 ${
+                    fieldErrors.phone ? "border-[#EF4444]/50" : "border-[#22354F]"
+                  }`}
+                />
+                {fieldErrors.phone && (
+                  <p className="mt-1 text-[11px] text-[#EF4444]">{fieldErrors.phone}</p>
                 )}
               </div>
 
